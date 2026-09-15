@@ -1,0 +1,169 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { createClient } from "@/lib/supabase/server";
+import { getCustomer } from "@/lib/services/customers";
+import { listWebsitesForCustomer, listEmailAccountsForCustomer } from "@/lib/services/websites";
+import { listLeads } from "@/lib/services/leads";
+import { customerStatusLabel, emailStatusLabel, formatDateTime, leadStatusLabel } from "@/lib/format";
+import { toggleCustomerStatusAction } from "@/lib/actions";
+
+export const metadata = { title: "Kunde" };
+
+const TABS = [
+  { id: "overview", label: "Übersicht" },
+  { id: "websites", label: "Websites" },
+  { id: "leads", label: "Leads" },
+  { id: "email", label: "E-Mail" },
+  { id: "automations", label: "Automationen" },
+  { id: "settings", label: "Einstellungen" },
+] as const;
+
+export default async function ClientDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { id } = await params;
+  const { tab = "overview" } = await searchParams;
+  const supabase = await createClient();
+  const customer = await getCustomer(supabase, id);
+  if (!customer) notFound();
+
+  const [websites, leads, emails, automations] = await Promise.all([
+    listWebsitesForCustomer(supabase, id),
+    listLeads(supabase, { customerId: id }),
+    listEmailAccountsForCustomer(supabase, id),
+    supabase.from("automations").select("id, name, trigger, action, enabled").eq("customer_id", id),
+  ]);
+
+  const emailConnected = emails.some((item) => item.status === "connected");
+
+  return (
+    <>
+      <PageHeader
+        title={customer.company_name}
+        description={`${customer.contact_name} · ${customer.contact_email}`}
+        action={
+          <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
+            {customerStatusLabel(customer.status)}
+          </StatusBadge>
+        }
+      />
+
+      <div className="mb-8 flex flex-wrap gap-2">
+        {[
+          { label: "Website", ok: websites.some((site) => site.active) },
+          { label: "Lead API", ok: websites.some((site) => site.active && site.api_key_hash) },
+          { label: "E-Mail", ok: emailConnected },
+          { label: "AI", ok: false },
+          { label: "Automationen", ok: (automations.data ?? []).some((item) => item.enabled) },
+        ].map((item) => (
+          <span key={item.label} className="rounded-full border border-border px-3 py-1 text-xs text-muted">
+            {item.label}: {item.ok ? "verbunden" : "offen"}
+          </span>
+        ))}
+      </div>
+
+      <div className="mb-6 flex gap-4 overflow-x-auto border-b border-border">
+        {TABS.map((item) => (
+          <Link
+            key={item.id}
+            href={`/clients/${id}?tab=${item.id}`}
+            className={`shrink-0 border-b-2 pb-3 text-sm ${
+              tab === item.id ? "border-foreground text-foreground" : "border-transparent text-muted"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      {tab === "overview" || tab === "leads" ? (
+        <Panel title="Leads">
+          <ul className="divide-y divide-border">
+            {leads.slice(0, tab === "overview" ? 5 : 50).map((lead) => (
+              <li key={lead.id} className="flex items-center justify-between gap-4 py-3">
+                <Link href={`/leads/${lead.id}`} className="text-sm hover:underline">
+                  {lead.name}
+                </Link>
+                <StatusBadge>{leadStatusLabel(lead.status)}</StatusBadge>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
+
+      {tab === "overview" || tab === "websites" ? (
+        <div className={tab === "overview" ? "mt-6" : ""}>
+          <Panel title="Websites">
+            <ul className="space-y-3">
+              {websites.map((site) => (
+                <li key={site.id} className="flex items-center justify-between gap-3 text-sm">
+                  <Link href={`/websites/${site.id}`} className="hover:underline">
+                    {site.name}
+                  </Link>
+                  <span className="text-muted">{site.domain}</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
+      ) : null}
+
+      {tab === "email" ? (
+        <Panel title="E-Mail-Verbindungen">
+          {emails.length === 0 ? (
+            <p className="text-sm text-muted">Noch keine Mailbox verbunden. OAuth folgt in einer späteren Phase.</p>
+          ) : (
+            <ul className="space-y-3">
+              {emails.map((account) => (
+                <li key={account.id} className="flex items-center justify-between text-sm">
+                  <span>
+                    {account.email} · {account.provider}
+                  </span>
+                  <StatusBadge>{emailStatusLabel(account.status)}</StatusBadge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      ) : null}
+
+      {tab === "automations" ? (
+        <Panel title="Automationen">
+          {(automations.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted">Keine Automationen. Die Engine ist vorbereitet, aber noch nicht aktiv.</p>
+          ) : (
+            <ul className="space-y-3 text-sm">
+              {(automations.data ?? []).map((item) => (
+                <li key={item.id}>
+                  {item.name} · {item.trigger} → {item.action}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      ) : null}
+
+      {tab === "settings" ? (
+        <Panel title="Einstellungen">
+          <p className="text-sm leading-6 text-muted">
+            Kunden können deaktiviert werden, ohne Daten zu löschen. Bestehende Leads bleiben erhalten.
+          </p>
+          <form
+            className="mt-4"
+            action={toggleCustomerStatusAction.bind(null, customer.id, customer.status === "active" ? "inactive" : "active")}
+          >
+            <button type="submit" className="h-9 rounded-lg border border-border px-3 text-sm">
+              {customer.status === "active" ? "Kunde deaktivieren" : "Kunde aktivieren"}
+            </button>
+          </form>
+          <p className="mt-4 text-xs text-subtle">Aktualisiert {formatDateTime(customer.updated_at)}</p>
+        </Panel>
+      ) : null}
+    </>
+  );
+}

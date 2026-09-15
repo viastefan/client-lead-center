@@ -1,0 +1,5 @@
+# Client Lead Center — local config
+project_id = "fneitubfxquybvexlole"
+
+[api]
+enabled = false
