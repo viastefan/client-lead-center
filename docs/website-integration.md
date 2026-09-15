@@ -150,6 +150,8 @@ Nicht im Katalog (interne Tools): `client-lead-center`, `leqra.app`, `aistartup`
 
 In der Admin-UI: **Verbindungen** → *Alle Live-Websites anbinden*. Danach Env + `app/api/contact/route.ts` in das jeweilige Kundenrepo kopieren.
 
+Die Live-Sites enthalten bereits `lib/lead-center.ts` und rufen Client Lead Center aus ihren bestehenden Kontakt-Routen auf, sobald `LEAD_API_KEY`, `CUSTOMER_ID` und `WEBSITE_ID` in Vercel gesetzt sind. Ohne diese Variablen bleibt das bisherige Verhalten (Mail, eigenes Backend) unverändert.
+
 ## Origin-Prüfung
 
 Wenn `Origin` oder `Referer` gesetzt sind, muss der Host zur Allowlist der Website passen: Custom Domain, Apex, `www` und das Vercel-Host inklusive Preview-URLs (`projekt-*.vercel.app`). Reine Server-zu-Server-Calls ohne diese Header sind erlaubt.

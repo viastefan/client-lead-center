@@ -140,4 +140,10 @@ npm run lint
 
 App (nach Vercel-Link): [https://client-lead-center.vercel.app](https://client-lead-center.vercel.app)
 
+Aktuelle Preview dieses Branches:
+
+```text
+https://client-lead-center-git-cursor-client-lead-center-e52b55-festag.vercel.app
+```
+
 Verbindungen: in der Admin-UI unter **Verbindungen** alle live stehenden Vercel-Kundenwebsites anbinden, dann Env + Contact-Route ins jeweilige Kundenprojekt kopieren. Details: [docs/website-integration.md](docs/website-integration.md)
