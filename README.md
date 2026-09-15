@@ -146,4 +146,4 @@ Aktuelle Preview dieses Branches:
 https://client-lead-center-git-cursor-client-lead-center-e52b55-festag.vercel.app
 ```
 
-Verbindungen: in der Admin-UI unter **Verbindungen** alle live stehenden Vercel-Kundenwebsites anbinden, dann Env + Contact-Route ins jeweilige Kundenprojekt kopieren. Details: [docs/website-integration.md](docs/website-integration.md)
+Verbindungen: in der Admin-UI unter **Verbindungen** alle live stehenden Vercel-Kundenwebsites anbinden, dann Env + Contact-Route ins jeweilige Kundenprojekt kopieren. Site-Patches: `npm run apply-site-patches -- /pfad/zu/den/repos`. Details: [docs/website-integration.md](docs/website-integration.md)

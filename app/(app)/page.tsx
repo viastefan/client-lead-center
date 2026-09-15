@@ -52,6 +52,27 @@ export default async function DashboardPage() {
         }
       />
 
+      {connectedCount < VERCEL_CUSTOMER_SITES.length ? (
+        <div className="mb-6 rounded-2xl border border-border bg-card px-5 py-4">
+          <p className="text-sm font-medium">Nächste Schritte</p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-muted">
+            <li>SQL-Migrationen in Supabase ausführen (init + website_connection).</li>
+            <li>
+              Unter{" "}
+              <Link href="/integrations" className="underline hover:text-foreground">
+                Verbindungen
+              </Link>{" "}
+              alle Live-Websites anbinden.
+            </li>
+            <li>API-Keys in den jeweiligen Vercel-Projekten als Server-Secrets setzen.</li>
+            <li>
+              Site-Patches aus <code className="font-mono text-foreground">integrations/sites</code> übernehmen
+              oder <code className="font-mono text-foreground">npm run apply-site-patches</code> ausführen.
+            </li>
+          </ol>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Kunden" value={stats.customerCount} />
         <StatCard label="Websites" value={stats.websiteCount} hint={`${stats.activeWebsiteCount} aktiv`} />

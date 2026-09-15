@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test lib/catalog/vercel-sites.test.ts lib/integrations/snippets.test.ts",
+    "apply-site-patches": "node scripts/apply-site-patches.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -26,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   },
   "description": "Internal multi-tenant admin app for clients, websites, and leads"
