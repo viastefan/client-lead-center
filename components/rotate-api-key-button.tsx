@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { rotateApiKeyAction } from "@/lib/actions";
+import { envSnippet } from "@/lib/integrations/snippets";
+import { CopyBlock } from "@/components/copy-block";
 
-export function RotateApiKeyButton({ websiteId }: { websiteId: string }) {
+export function RotateApiKeyButton({
+  websiteId,
+  customerId,
+}: {
+  websiteId: string;
+  customerId: string;
+}) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -26,16 +34,16 @@ export function RotateApiKeyButton({ websiteId }: { websiteId: string }) {
         type="button"
         onClick={onRotate}
         disabled={pending}
-        className="h-9 rounded-lg border border-border px-3 text-sm disabled:opacity-60"
+        className="h-9 rounded-lg border border-border px-3 text-sm transition hover:bg-background disabled:opacity-60"
       >
         {pending ? "Generieren…" : "API-Key neu generieren"}
       </button>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
       {apiKey ? (
-        <div className="rounded-lg border border-border bg-background px-4 py-3">
-          <p className="text-xs text-muted">Diesen Schlüssel jetzt kopieren. Er wird nicht erneut angezeigt.</p>
-          <p className="mt-2 break-all font-mono text-sm">{apiKey}</p>
-        </div>
+        <CopyBlock
+          label="Einmaliger API-Key · .env"
+          value={envSnippet({ id: websiteId, customer_id: customerId }, apiKey)}
+        />
       ) : null}
     </div>
   );

@@ -1,9 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function getDashboardStats(supabase: SupabaseClient) {
-  const [customers, websites, leads, activities] = await Promise.all([
+  const [customers, websitesPrimary, leads, activities] = await Promise.all([
     supabase.from("customers").select("id, status, company_name, updated_at"),
-    supabase.from("websites").select("id, active, status"),
+    supabase.from("websites").select("id, active, status, vercel_project, domain, github_repo, vercel_url"),
     supabase
       .from("leads")
       .select("id, status, name, email, created_at, customer_id, customers(company_name)")
@@ -15,6 +15,10 @@ export async function getDashboardStats(supabase: SupabaseClient) {
       .order("created_at", { ascending: false })
       .limit(8),
   ]);
+
+  const websites = websitesPrimary.error
+    ? await supabase.from("websites").select("id, active, status, domain")
+    : websitesPrimary;
 
   if (customers.error) throw customers.error;
   if (websites.error) throw websites.error;
@@ -29,6 +33,7 @@ export async function getDashboardStats(supabase: SupabaseClient) {
     activeCustomerCount: customers.data?.filter((row) => row.status === "active").length ?? 0,
     websiteCount: websites.data?.length ?? 0,
     activeWebsiteCount: websites.data?.filter((row) => row.active).length ?? 0,
+    websites: websites.data ?? [],
     newLeadCount: leadRows.filter((row) => row.status === "new").length,
     openLeadCount: leadRows.filter((row) => openStatuses.has(row.status)).length,
     recentLeads: leadRows.slice(0, 6),

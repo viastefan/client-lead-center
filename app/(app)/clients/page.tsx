@@ -25,7 +25,7 @@ export default async function ClientsPage() {
         }
       />
 
-      <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
             <tr>
@@ -39,7 +39,7 @@ export default async function ClientsPage() {
           </thead>
           <tbody>
             {customers.map((customer) => (
-              <tr key={customer.id} className="border-b border-border last:border-0">
+              <tr key={customer.id} className="border-b border-border last:border-0 hover:bg-background/70">
                 <td className="px-5 py-4">
                   <Link href={`/clients/${customer.id}`} className="font-medium hover:underline">
                     {customer.company_name}
@@ -68,7 +68,7 @@ export default async function ClientsPage() {
           <Link
             key={customer.id}
             href={`/clients/${customer.id}`}
-            className="block rounded-xl border border-border bg-card px-4 py-4"
+            className="block rounded-2xl border border-border bg-card px-4 py-4"
           >
             <div className="flex items-center justify-between gap-3">
               <p className="font-medium">{customer.company_name}</p>

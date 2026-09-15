@@ -92,6 +92,10 @@ export type Website = {
   api_key_hash: string;
   last_request_at: string | null;
   last_lead_at: string | null;
+  vercel_project: string | null;
+  vercel_url: string | null;
+  github_repo: string | null;
+  allowed_hosts: string[];
   created_at: string;
   updated_at: string;
 };

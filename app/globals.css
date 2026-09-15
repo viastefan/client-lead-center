@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f5;
-  --foreground: #1a1a18;
-  --muted: #6f6f69;
-  --subtle: #9a9a93;
-  --border: #e8e8e3;
+  --background: #f4f4f1;
+  --foreground: #171716;
+  --muted: #6b6b64;
+  --subtle: #98988f;
+  --border: #e6e6e0;
   --card: #ffffff;
   --accent: #111110;
-  --success: #3f6b4b;
+  --success: #2f6a42;
   --warning: #8a6a24;
   --danger: #9b3b32;
 }
@@ -37,10 +37,11 @@ body {
 body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "ss01" on, "cv11" on;
+  letter-spacing: -0.011em;
 }
 
 ::selection {
-  background: #ecece8;
+  background: #ecece6;
 }
 
 input,
@@ -53,4 +54,24 @@ button {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+pre {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }

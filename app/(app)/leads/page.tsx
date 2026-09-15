@@ -70,7 +70,7 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-4">
+      <form className="mb-6 grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-4">
         <select name="customerId" defaultValue={filters.customerId ?? ""} className="h-10 rounded-lg border border-border bg-background px-3 text-sm">
           <option value="">Kunde</option>
           {customers.map((customer) => (
@@ -111,7 +111,7 @@ export default async function LeadsPage({
           <Link
             key={lead.id}
             href={`/leads/${lead.id}`}
-            className="block rounded-xl border border-border bg-card px-5 py-4"
+            className="block rounded-2xl border border-border bg-card px-5 py-4 transition hover:bg-background/40"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">

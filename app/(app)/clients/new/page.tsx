@@ -6,7 +6,7 @@ export const metadata = { title: "Neuer Kunde" };
 export default function NewClientPage() {
   return (
     <>
-      <PageHeader title="Neuer Kunde" description="Mandant anlegen. Websites und API-Keys folgen im nächsten Schritt." />
+      <PageHeader title="Neuer Kunde" description="Manuell anlegen. Live-Vercel-Sites besser über Verbindungen anbinden." />
       <CreateCustomerForm />
     </>
   );

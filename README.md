@@ -53,7 +53,8 @@ App: [http://localhost:3000](http://localhost:3000)
 SQL ausführen (SQL Editor im verknüpften Projekt):
 
 1. `supabase/migrations/20260915120000_init.sql`
-2. optional Demo-Daten: `supabase/seed.sql`
+2. `supabase/migrations/20260915180000_website_connection.sql`
+3. optional Demo-Daten: `supabase/seed.sql`
 
 Oder mit Supabase CLI:
 
@@ -137,4 +138,6 @@ npm run build
 npm run lint
 ```
 
-Nächster sinnvoller Schritt nach diesem Stand: **eine bestehende Kundenwebsite** (z. B. Abelen) über `POST /api/contact` an `/api/leads` anschließen.
+App (nach Vercel-Link): [https://client-lead-center.vercel.app](https://client-lead-center.vercel.app)
+
+Verbindungen: in der Admin-UI unter **Verbindungen** alle live stehenden Vercel-Kundenwebsites anbinden, dann Env + Contact-Route ins jeweilige Kundenprojekt kopieren. Details: [docs/website-integration.md](docs/website-integration.md)

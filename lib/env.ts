@@ -27,7 +27,13 @@ export function isSupabaseAdminConfigured(): boolean {
 }
 
 export function getAppUrl(): string {
-  return read("APP_URL") ?? read("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
+  return (
+    read("APP_URL") ??
+    read("NEXT_PUBLIC_APP_URL") ??
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "https://client-lead-center.vercel.app")
+  );
 }
 
 export function getEncryptionKey(): string | undefined {

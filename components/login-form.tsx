@@ -47,7 +47,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="h-11 w-full rounded-lg border border-border bg-card px-3 outline-none ring-foreground/10 transition focus:ring-2"
+          className="h-11 w-full rounded-lg border border-border bg-background px-3 outline-none ring-foreground/10 transition focus:ring-2"
         />
       </label>
       <label className="block">
@@ -57,7 +57,7 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="h-11 w-full rounded-lg border border-border bg-card px-3 outline-none ring-foreground/10 transition focus:ring-2"
+          className="h-11 w-full rounded-lg border border-border bg-background px-3 outline-none ring-foreground/10 transition focus:ring-2"
         />
       </label>
       {error ? <p className="text-sm text-danger">{error}</p> : null}

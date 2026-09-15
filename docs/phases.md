@@ -16,6 +16,7 @@ Abgeschlossen in dieser Basis:
 12. Automation-Events (`lead.created`)
 13. AI-Adapter-Gerüst (`lib/ai`)
 14. `GET /api/health`
+15. Vercel-Katalog + Origin-Allowlist + Connection Kit für alle Live-Kundenwebsites
 
 Nicht in V1:
 

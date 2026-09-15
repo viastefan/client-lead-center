@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { hashesMatch } from "@/lib/crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ApiError } from "@/lib/api/errors";
-import { domainHost } from "@/lib/format";
+import { allowedHostsForWebsite, isHostAllowed } from "@/lib/integrations/snippets";
 import type { Website } from "@/types";
 
 const MAX_BODY_BYTES = 32 * 1024;
@@ -46,7 +46,7 @@ export async function authenticateWebsite(
   const { data, error } = await supabase
     .from("websites")
     .select(
-      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, created_at, updated_at",
+      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, vercel_project, vercel_url, github_repo, allowed_hosts, created_at, updated_at",
     )
     .eq("id", websiteId)
     .maybeSingle();
@@ -69,18 +69,18 @@ export async function authenticateWebsite(
     throw new ApiError(401, "UNAUTHORIZED", "Website is not active.");
   }
 
-  assertOrigin(request, website.domain);
+  assertOrigin(request, website);
   return website;
 }
 
-function assertOrigin(request: NextRequest, domain: string) {
+function assertOrigin(request: NextRequest, website: Website) {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   if (!origin && !referer) {
     return;
   }
 
-  const allowedHost = domainHost(domain).toLowerCase();
+  const allowed = allowedHostsForWebsite(website);
   const hosts = [origin, referer]
     .filter((value): value is string => Boolean(value))
     .map((value) => {
@@ -91,14 +91,7 @@ function assertOrigin(request: NextRequest, domain: string) {
       }
     });
 
-  const ok = hosts.some(
-    (host) =>
-      host === allowedHost ||
-      host.endsWith(`.${allowedHost}`) ||
-      allowedHost.endsWith(`.${host}`),
-  );
-
-  if (!ok) {
+  if (!hosts.every((host) => !host || isHostAllowed(host, allowed))) {
     throw new ApiError(401, "UNAUTHORIZED", "Origin is not allowed for this website.");
   }
 }

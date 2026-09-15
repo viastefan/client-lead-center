@@ -2,6 +2,7 @@ import Link from "next/link";
 import { EmptyState, PageHeader, Panel, StatCard, StatusBadge } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardStats } from "@/lib/services/dashboard";
+import { matchCatalogToWebsites, VERCEL_CUSTOMER_SITES } from "@/lib/catalog/vercel-sites";
 import { formatDateTime, leadStatusLabel } from "@/lib/format";
 import { isSupabaseAdminConfigured, hasClaudeKey, hasResendKey, hasGoogleOAuth, hasMicrosoftOAuth } from "@/lib/env";
 
@@ -17,6 +18,8 @@ function toneForLead(status: string) {
 export default async function DashboardPage() {
   const supabase = await createClient();
   const stats = await getDashboardStats(supabase);
+  const matches = matchCatalogToWebsites(stats.websites);
+  const connectedCount = matches.filter((item) => item.website).length;
 
   const system = [
     { label: "API", ok: true, note: "Operational" },
@@ -36,13 +39,52 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="Überblick über Kunden, Websites und offene Anfragen." />
+      <PageHeader
+        title="Dashboard"
+        description="Zentrale Lead-Annahme für alle live stehenden Kundenwebsites."
+        action={
+          <Link
+            href="/integrations"
+            className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-sm transition hover:bg-background"
+          >
+            Verbindungen
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Kunden" value={stats.customerCount} />
-        <StatCard label="Websites" value={stats.websiteCount} />
-        <StatCard label="Neue Leads" value={stats.newLeadCount} />
-        <StatCard label="Offene Leads" value={stats.openLeadCount} />
+        <StatCard label="Websites" value={stats.websiteCount} hint={`${stats.activeWebsiteCount} aktiv`} />
+        <StatCard
+          label="Vercel live"
+          value={`${connectedCount}/${VERCEL_CUSTOMER_SITES.length}`}
+          hint="Katalog der produktiven Sites"
+        />
+        <StatCard label="Neue Leads" value={stats.newLeadCount} hint={`${stats.openLeadCount} offen`} />
+      </div>
+
+      <div className="mt-6">
+        <Panel
+          title="Live-Verbindungen"
+          description="Welche Vercel-Projekte bereits an Client Lead Center senden dürfen."
+          action={
+            <Link href="/integrations" className="text-sm text-muted hover:text-foreground">
+              Alle
+            </Link>
+          }
+        >
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {matches.map(({ site, website }) => (
+              <li key={site.slug} className="rounded-xl border border-border bg-background px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium">{site.companyName}</p>
+                  <StatusBadge tone={website ? "success" : "warning"}>{website ? "OK" : "Offen"}</StatusBadge>
+                </div>
+                <p className="mt-1 truncate text-xs text-muted">{site.domain}</p>
+              </li>
+            ))}
+          </ul>
+        </Panel>
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
@@ -85,18 +127,22 @@ export default async function DashboardPage() {
 
         <div className="space-y-6">
           <Panel title="Kundenübersicht">
-            <ul className="space-y-3">
-              {stats.customers.slice(0, 6).map((customer) => (
-                <li key={customer.id} className="flex items-center justify-between gap-3">
-                  <Link href={`/clients/${customer.id}`} className="text-sm hover:underline">
-                    {customer.company_name}
-                  </Link>
-                  <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
-                    {customer.status === "active" ? "Aktiv" : "Inaktiv"}
-                  </StatusBadge>
-                </li>
-              ))}
-            </ul>
+            {stats.customers.length === 0 ? (
+              <p className="text-sm text-muted">Noch keine Kunden. Über Verbindungen anbinden.</p>
+            ) : (
+              <ul className="space-y-3">
+                {stats.customers.slice(0, 6).map((customer) => (
+                  <li key={customer.id} className="flex items-center justify-between gap-3">
+                    <Link href={`/clients/${customer.id}`} className="text-sm hover:underline">
+                      {customer.company_name}
+                    </Link>
+                    <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
+                      {customer.status === "active" ? "Aktiv" : "Inaktiv"}
+                    </StatusBadge>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Panel>
 
           <Panel title="Systemstatus">

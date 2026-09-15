@@ -10,7 +10,7 @@ export function PageHeader({
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-medium tracking-tight">{title}</h1>
+        <h1 className="text-[28px] font-medium tracking-tight">{title}</h1>
         {description ? <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{description}</p> : null}
       </div>
       {action}
@@ -18,11 +18,20 @@ export function PageHeader({
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description: string }) {
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-border bg-card px-6 py-12 text-center">
+    <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
       <p className="text-sm font-medium">{title}</p>
-      <p className="mt-2 text-sm text-muted">{description}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">{description}</p>
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }
@@ -35,24 +44,33 @@ export function StatusBadge({
   children: React.ReactNode;
 }) {
   const colors = {
-    neutral: "bg-background text-muted",
+    neutral: "bg-background text-muted ring-1 ring-border",
     success: "bg-success/10 text-success",
     warning: "bg-warning/10 text-warning",
     danger: "bg-danger/10 text-danger",
   } as const;
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${colors[tone]}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[tone]}`}>
       {children}
     </span>
   );
 }
 
-export function StatCard({ label, value }: { label: string; value: string | number }) {
+export function StatCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
   return (
-    <div className="rounded-xl border border-border bg-card px-5 py-4">
+    <div className="rounded-2xl border border-border bg-card px-5 py-4">
       <p className="text-xs uppercase tracking-wide text-subtle">{label}</p>
-      <p className="mt-2 text-2xl font-medium tracking-tight">{value}</p>
+      <p className="mt-2 text-[28px] font-medium tracking-tight">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -61,15 +79,20 @@ export function Panel({
   title,
   children,
   action,
+  description,
 }: {
   title: string;
   children: React.ReactNode;
   action?: React.ReactNode;
+  description?: string;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3">
-        <h2 className="text-sm font-medium">{title}</h2>
+    <section className="rounded-2xl border border-border bg-card">
+      <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
+        <div>
+          <h2 className="text-sm font-medium">{title}</h2>
+          {description ? <p className="mt-1 text-xs leading-5 text-muted">{description}</p> : null}
+        </div>
         {action}
       </div>
       <div className="px-5 py-4">{children}</div>

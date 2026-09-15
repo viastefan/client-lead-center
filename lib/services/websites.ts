@@ -1,18 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateApiKey, hashApiKey } from "@/lib/crypto";
+import type { VercelCustomerSite } from "@/lib/catalog/vercel-sites";
 import type { Customer, EmailAccount, Website } from "@/types";
+
+export const WEBSITE_COLUMNS =
+  "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, vercel_project, vercel_url, github_repo, allowed_hosts, created_at, updated_at";
 
 export type WebsiteListRow = Website & {
   customer: Pick<Customer, "id" | "company_name"> | null;
-  last_lead_at: string | null;
 };
+
+function normalizeWebsite(row: Website & { allowed_hosts?: string[] | null }): Website {
+  return {
+    ...row,
+    vercel_project: row.vercel_project ?? null,
+    vercel_url: row.vercel_url ?? null,
+    github_repo: row.github_repo ?? null,
+    allowed_hosts: row.allowed_hosts ?? [],
+  };
+}
 
 export async function listWebsites(supabase: SupabaseClient): Promise<WebsiteListRow[]> {
   const { data, error } = await supabase
     .from("websites")
-    .select(
-      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, created_at, updated_at, customers(id, company_name)",
-    )
+    .select(`${WEBSITE_COLUMNS}, customers(id, company_name)`)
     .order("name");
 
   if (error) {
@@ -23,9 +34,9 @@ export async function listWebsites(supabase: SupabaseClient): Promise<WebsiteLis
     const { customers, ...website } = row as Website & {
       customers: Pick<Customer, "id" | "company_name"> | Pick<Customer, "id" | "company_name">[] | null;
     };
-    const customer = Array.isArray(customers) ? customers[0] ?? null : customers;
+    const customer = Array.isArray(customers) ? (customers[0] ?? null) : customers;
     return {
-      ...(website as Website),
+      ...normalizeWebsite(website as Website),
       customer,
     };
   });
@@ -37,9 +48,7 @@ export async function getWebsite(
 ): Promise<(Website & { customer: Customer | null }) | null> {
   const { data, error } = await supabase
     .from("websites")
-    .select(
-      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, created_at, updated_at, customers(*)",
-    )
+    .select(`${WEBSITE_COLUMNS}, customers(*)`)
     .eq("id", id)
     .maybeSingle();
 
@@ -53,8 +62,8 @@ export async function getWebsite(
   const { customers, ...website } = data as Website & {
     customers: Customer | Customer[] | null;
   };
-  const customer = Array.isArray(customers) ? customers[0] ?? null : customers;
-  return { ...(website as Website), customer };
+  const customer = Array.isArray(customers) ? (customers[0] ?? null) : customers;
+  return { ...normalizeWebsite(website as Website), customer };
 }
 
 export async function listWebsitesForCustomer(
@@ -63,9 +72,7 @@ export async function listWebsitesForCustomer(
 ): Promise<Website[]> {
   const { data, error } = await supabase
     .from("websites")
-    .select(
-      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, created_at, updated_at",
-    )
+    .select(WEBSITE_COLUMNS)
     .eq("customer_id", customerId)
     .order("name");
 
@@ -73,7 +80,23 @@ export async function listWebsitesForCustomer(
     throw error;
   }
 
-  return (data ?? []) as Website[];
+  return ((data ?? []) as Website[]).map(normalizeWebsite);
+}
+
+export async function getWebsiteByVercelProject(
+  supabase: SupabaseClient,
+  vercelProject: string,
+): Promise<Website | null> {
+  const { data, error } = await supabase
+    .from("websites")
+    .select(WEBSITE_COLUMNS)
+    .eq("vercel_project", vercelProject)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  return data ? normalizeWebsite(data as Website) : null;
 }
 
 export async function createWebsite(
@@ -84,6 +107,10 @@ export async function createWebsite(
     domain: string;
     status: "active" | "inactive" | "error";
     active: boolean;
+    vercelProject?: string | null;
+    vercelUrl?: string | null;
+    githubRepo?: string | null;
+    allowedHosts?: string[];
   },
 ): Promise<{ website: Website; apiKey: string }> {
   const apiKey = generateApiKey();
@@ -96,17 +123,19 @@ export async function createWebsite(
       status: input.status,
       active: input.active,
       api_key_hash: hashApiKey(apiKey),
+      vercel_project: input.vercelProject ?? null,
+      vercel_url: input.vercelUrl ?? null,
+      github_repo: input.githubRepo ?? null,
+      allowed_hosts: input.allowedHosts ?? [],
     })
-    .select(
-      "id, customer_id, name, domain, status, active, api_key_hash, last_request_at, last_lead_at, created_at, updated_at",
-    )
+    .select(WEBSITE_COLUMNS)
     .single();
 
   if (error) {
     throw error;
   }
 
-  return { website: data as Website, apiKey };
+  return { website: normalizeWebsite(data as Website), apiKey };
 }
 
 export async function rotateWebsiteApiKey(
@@ -168,7 +197,44 @@ export async function listEmailAccounts(supabase: SupabaseClient): Promise<
     const { customers, ...account } = row as EmailAccount & {
       customers: Pick<Customer, "company_name"> | Pick<Customer, "company_name">[] | null;
     };
-    const customer = Array.isArray(customers) ? customers[0] ?? null : customers;
+    const customer = Array.isArray(customers) ? (customers[0] ?? null) : customers;
     return { ...(account as EmailAccount), customer };
   });
+}
+
+export async function findOrCreateCustomerForSite(
+  supabase: SupabaseClient,
+  site: VercelCustomerSite,
+): Promise<Customer> {
+  const { data: existing } = await supabase
+    .from("customers")
+    .select(
+      "id, name, company_name, contact_name, contact_email, contact_phone, status, notes, created_at, updated_at",
+    )
+    .eq("company_name", site.companyName)
+    .maybeSingle();
+
+  if (existing) {
+    return existing as Customer;
+  }
+
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({
+      name: site.companyName,
+      company_name: site.companyName,
+      contact_name: site.contactName,
+      contact_email: site.contactEmail,
+      status: "active",
+      notes: `Live Vercel-Projekt ${site.slug}`,
+    })
+    .select(
+      "id, name, company_name, contact_name, contact_email, contact_phone, status, notes, created_at, updated_at",
+    )
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data as Customer;
 }

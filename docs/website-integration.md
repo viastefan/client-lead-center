@@ -131,9 +131,28 @@ export async function submitLead(input: {
 }
 ```
 
+## Live Vercel-Websites
+
+Diese Kundenprojekte sind im Katalog (`lib/catalog/vercel-sites.ts`) und über **Verbindungen** anbindbar:
+
+| Kunde | Domain | Vercel | GitHub |
+|-------|--------|--------|--------|
+| Abelen Immobilien | www.abelen-immobilien.de | abelenimmobilienvermittlung.vercel.app | viastefan/abelenimmobilienvermittlung |
+| Wassana Thai Imbiss | www.wassana-thai-imbiss.de | wassana-sepia.vercel.app | viastefan/Wassana |
+| Airport Verpackungen | www.airport-verpackungen.de | avs-tau.vercel.app | viastefan/avs |
+| Wasco Textil | www.wascotextil.de | wascotextil.vercel.app | viastefan/wascotextil |
+| Festag | festagwebsite.vercel.app | festagwebsite.vercel.app | viastefan/festagwebsite |
+| eRide Bavaria | eridebavaria.vercel.app | eridebavaria.vercel.app | viastefan/eridebavaria |
+| Figura | figura-nine.vercel.app | figura-nine.vercel.app | viastefan/figura |
+| MUC Cargohandling | www.muc-cargo.de | muc-cargo-handling.vercel.app | viastefan/muc-cargo-handling |
+
+Nicht im Katalog (interne Tools): `client-lead-center`, `leqra.app`, `aistartup`, `veyra-pixel-generator`.
+
+In der Admin-UI: **Verbindungen** → *Alle Live-Websites anbinden*. Danach Env + `app/api/contact/route.ts` in das jeweilige Kundenrepo kopieren.
+
 ## Origin-Prüfung
 
-Wenn `Origin` oder `Referer` gesetzt sind, muss der Host zur Domain der Website in Client Lead Center passen. Reine Server-zu-Server-Calls ohne diese Header sind erlaubt.
+Wenn `Origin` oder `Referer` gesetzt sind, muss der Host zur Allowlist der Website passen: Custom Domain, Apex, `www` und das Vercel-Host inklusive Preview-URLs (`projekt-*.vercel.app`). Reine Server-zu-Server-Calls ohne diese Header sind erlaubt.
 
 ## Test mit cURL
 

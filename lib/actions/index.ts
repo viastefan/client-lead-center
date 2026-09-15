@@ -150,3 +150,92 @@ export async function updateLeadAction(leadId: string, formData: FormData) {
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);
 }
+
+export type ProvisionedKey = {
+  slug: string;
+  companyName: string;
+  websiteId: string;
+  customerId: string;
+  apiKey: string;
+};
+
+export async function provisionVercelSitesAction(): Promise<{
+  error?: string;
+  created: number;
+  existing: number;
+  keys: ProvisionedKey[];
+}> {
+  const user = await requireSessionUser();
+  if (!isAdminRole(user.profile?.role)) {
+    return { error: "Nur Administratoren können Websites anbinden.", created: 0, existing: 0, keys: [] };
+  }
+
+  const supabase = await createClient();
+  const { VERCEL_CUSTOMER_SITES } = await import("@/lib/catalog/vercel-sites");
+  const {
+    createWebsite: createSite,
+    findOrCreateCustomerForSite,
+    getWebsiteByVercelProject,
+  } = await import("@/lib/services/websites");
+
+  const keys: ProvisionedKey[] = [];
+  let created = 0;
+  let existing = 0;
+
+  try {
+    for (const site of VERCEL_CUSTOMER_SITES) {
+      const already = await getWebsiteByVercelProject(supabase, site.slug);
+      if (already) {
+        existing += 1;
+        continue;
+      }
+
+      const customer = await findOrCreateCustomerForSite(supabase, site);
+      const { website, apiKey } = await createSite(supabase, {
+        customerId: customer.id,
+        name: site.websiteName,
+        domain: site.domain,
+        status: "active",
+        active: true,
+        vercelProject: site.slug,
+        vercelUrl: site.vercelUrl,
+        githubRepo: site.githubRepo,
+        allowedHosts: site.allowedHosts,
+      });
+
+      await writeAuditLog(supabase, {
+        userId: user.id,
+        customerId: customer.id,
+        action: "website.connected",
+        entityType: "website",
+        entityId: website.id,
+        metadata: { vercelProject: site.slug },
+      });
+
+      keys.push({
+        slug: site.slug,
+        companyName: site.companyName,
+        websiteId: website.id,
+        customerId: customer.id,
+        apiKey,
+      });
+      created += 1;
+    }
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Anbindung fehlgeschlagen. Prüfen Sie, ob die Connection-Migration in Supabase ausgeführt wurde.",
+      created,
+      existing,
+      keys,
+    };
+  }
+
+  revalidatePath("/integrations");
+  revalidatePath("/websites");
+  revalidatePath("/clients");
+  revalidatePath("/");
+  return { created, existing, keys };
+}
