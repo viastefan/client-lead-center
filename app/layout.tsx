@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "Internes Operations-System für Kunden, Websites und Leads.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="de"
