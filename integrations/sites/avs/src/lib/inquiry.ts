@@ -80,13 +80,10 @@ function bodyLines(f: InquiryFields) {
   ];
 }
 
-import { z } from "zod";
-import { findOrCreateCustomer } from "@/lib/customers";
-import { createOpportunityFromRequest } from "@/lib/pipeline";
-import { notifyAdmins, notifyCustomer } from "@/lib/notifications";
-import { prisma } from "@/lib/db";
-import { handleApiError, jsonOk } from "@/lib/api-utils";
-import { forwardLeadToCenter } from "@/lib/lead-center";
+export async function handleInquiry(
+  f: InquiryFields,
+  opts: { requireConsent?: boolean } = {},
+): Promise<InquiryResult> {
   /* Only two things are genuinely needed: somewhere to reply to, and
      something to reply about. Everything else — name, subject, transport,
      measurements — is a convenience for us, not a hurdle for the sender.
