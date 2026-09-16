@@ -1,22 +1,14 @@
 import Link from "next/link";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { listWebsites } from "@/lib/services/websites";
+import { loadWebsites } from "@/lib/data/workspace";
 import { findCatalogSite } from "@/lib/catalog/vercel-sites";
 import { formatDateTime, websiteStatusLabel } from "@/lib/format";
 
 export const metadata = { title: "Websites" };
 
 export default async function WebsitesPage() {
-  const supabase = await createClient();
-  let websites: Awaited<ReturnType<typeof listWebsites>> = [];
-  let migrationMissing = false;
-
-  try {
-    websites = await listWebsites(supabase);
-  } catch {
-    migrationMissing = true;
-  }
+  const websites = await loadWebsites();
+  const migrationMissing = false;
 
   return (
     <>

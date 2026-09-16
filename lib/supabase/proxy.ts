@@ -21,12 +21,6 @@ export async function updateSession(request: NextRequest) {
   const key = getSupabaseAnonKey();
 
   if (!url || !key) {
-    if (!isPublicPath(request.nextUrl.pathname) && request.nextUrl.pathname !== "/") {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/";
-      redirectUrl.search = "";
-      return NextResponse.redirect(redirectUrl);
-    }
     return NextResponse.next({ request });
   }
 

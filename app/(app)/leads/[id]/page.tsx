@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { getLead, listConversationsForLead } from "@/lib/services/leads";
+import { loadConversations, loadLead } from "@/lib/data/workspace";
 import { formatDateTime, leadStatusLabel, priorityLabel } from "@/lib/format";
 import { updateLeadAction } from "@/lib/actions";
 import { LEAD_PRIORITIES, LEAD_STATUSES } from "@/types";
@@ -14,10 +13,9 @@ export default async function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const lead = await getLead(supabase, id);
+  const lead = await loadLead(id);
   if (!lead) notFound();
-  const conversations = await listConversationsForLead(supabase, lead.id, lead.customer_id);
+  const conversations = await loadConversations(lead.id, lead.customer_id);
 
   return (
     <>

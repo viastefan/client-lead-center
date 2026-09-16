@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { getCustomer } from "@/lib/services/customers";
-import { listWebsitesForCustomer, listEmailAccountsForCustomer } from "@/lib/services/websites";
-import { listLeads } from "@/lib/services/leads";
+import {
+  loadAutomationsForCustomer,
+  loadCustomer,
+  loadEmailAccountsForCustomer,
+  loadLeads,
+  loadWebsitesForCustomer,
+} from "@/lib/data/workspace";
 import { customerStatusLabel, emailStatusLabel, formatDateTime, leadStatusLabel } from "@/lib/format";
 import { toggleCustomerStatusAction } from "@/lib/actions";
 
@@ -28,15 +31,14 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
-  const supabase = await createClient();
-  const customer = await getCustomer(supabase, id);
+  const customer = await loadCustomer(id);
   if (!customer) notFound();
 
   const [websites, leads, emails, automations] = await Promise.all([
-    listWebsitesForCustomer(supabase, id),
-    listLeads(supabase, { customerId: id }),
-    listEmailAccountsForCustomer(supabase, id),
-    supabase.from("automations").select("id, name, trigger, action, enabled").eq("customer_id", id),
+    loadWebsitesForCustomer(id),
+    loadLeads({ customerId: id }),
+    loadEmailAccountsForCustomer(id),
+    loadAutomationsForCustomer(id),
   ]);
 
   const emailConnected = emails.some((item) => item.status === "connected");
@@ -59,7 +61,7 @@ export default async function ClientDetailPage({
           { label: "Lead API", ok: websites.some((site) => site.active && site.api_key_hash) },
           { label: "E-Mail", ok: emailConnected },
           { label: "AI", ok: false },
-          { label: "Automationen", ok: (automations.data ?? []).some((item) => item.enabled) },
+          { label: "Automationen", ok: automations.some((item) => item.enabled) },
         ].map((item) => (
           <span key={item.label} className="rounded-full border border-border px-3 py-1 text-xs text-muted">
             {item.label}: {item.ok ? "verbunden" : "offen"}
@@ -134,11 +136,11 @@ export default async function ClientDetailPage({
 
       {tab === "automations" ? (
         <Panel title="Automationen">
-          {(automations.data ?? []).length === 0 ? (
+          {automations.length === 0 ? (
             <p className="text-sm text-muted">Keine Automationen. Die Engine ist vorbereitet, aber noch nicht aktiv.</p>
           ) : (
             <ul className="space-y-3 text-sm">
-              {(automations.data ?? []).map((item) => (
+              {automations.map((item) => (
                 <li key={item.id}>
                   {item.name} · {item.trigger} → {item.action}
                 </li>

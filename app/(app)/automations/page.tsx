@@ -1,14 +1,10 @@
-import { PageHeader, Panel } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
+import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { loadAutomations } from "@/lib/data/workspace";
 
 export const metadata = { title: "Automationen" };
 
 export default async function AutomationsPage() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("automations")
-    .select("id, name, trigger, action, enabled, customers(company_name)")
-    .order("name");
+  const automations = await loadAutomations();
 
   return (
     <>
@@ -17,21 +13,23 @@ export default async function AutomationsPage() {
         description="V1 zeichnet Events wie lead.created auf. Eine Execution-Engine folgt später."
       />
       <Panel title="Definierte Automationen">
-        {(data ?? []).length === 0 ? (
+        {automations.length === 0 ? (
           <p className="text-sm text-muted">Noch keine Automationen. Trigger und Actions sind im Datenmodell vorbereitet.</p>
         ) : (
           <ul className="space-y-4 text-sm">
-            {(data ?? []).map((item) => {
-              const customer = Array.isArray(item.customers) ? item.customers[0] : item.customers;
-              return (
-                <li key={item.id}>
+            {automations.map((item) => (
+              <li key={item.id} className="flex items-start justify-between gap-3">
+                <div>
                   <p className="font-medium">{item.name}</p>
                   <p className="mt-1 text-muted">
-                    {customer?.company_name} · {item.trigger} → {item.action} · {item.enabled ? "aktiv" : "pausiert"}
+                    {item.customers?.company_name} · {item.trigger} → {item.action}
                   </p>
-                </li>
-              );
-            })}
+                </div>
+                <StatusBadge tone={item.enabled ? "success" : "neutral"}>
+                  {item.enabled ? "aktiv" : "pausiert"}
+                </StatusBadge>
+              </li>
+            ))}
           </ul>
         )}
       </Panel>

@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { CopyBlock } from "@/components/copy-block";
 import { RotateApiKeyButton } from "@/components/rotate-api-key-button";
-import { createClient } from "@/lib/supabase/server";
-import { getWebsite } from "@/lib/services/websites";
+import { isPreviewMode, loadWebsite } from "@/lib/data/workspace";
 import { findCatalogSite } from "@/lib/catalog/vercel-sites";
 import {
   allowedHostsForWebsite,
@@ -24,9 +23,9 @@ export default async function WebsiteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const website = await getWebsite(supabase, id);
+  const website = await loadWebsite(id);
   if (!website) notFound();
+  const preview = isPreviewMode();
 
   const catalog = findCatalogSite({
     vercelProject: website.vercel_project,
@@ -124,7 +123,11 @@ export default async function WebsiteDetailPage({
               Der Key wird nur als Hash gespeichert. Nach dem Generieren ist der Klartext ein einziges Mal sichtbar.
             </p>
             <div className="mt-4">
-              <RotateApiKeyButton websiteId={website.id} customerId={website.customer_id} />
+              {preview ? (
+                <p className="text-sm text-subtle">In der Vorschau nicht verfügbar. Nach Supabase-Connect hier rotieren.</p>
+              ) : (
+                <RotateApiKeyButton websiteId={website.id} customerId={website.customer_id} />
+              )}
             </div>
           </Panel>
         </div>

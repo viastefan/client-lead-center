@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
+import { PreviewBanner } from "@/components/preview-banner";
 import type { SessionUser } from "@/types";
 
 const PRIMARY = [
@@ -76,9 +77,11 @@ function NavList({
 export function AppShell({
   user,
   children,
+  preview = false,
 }: {
   user: SessionUser;
   children: React.ReactNode;
+  preview?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -105,7 +108,7 @@ export function AppShell({
             <BrandMark size="sm" />
             <div>
               <p className="text-[13px] font-medium tracking-tight">Client Lead Center</p>
-              <p className="text-[11px] text-subtle">Operations</p>
+              <p className="text-[11px] text-subtle">{preview ? "Vorschau" : "Operations"}</p>
             </div>
           </div>
           <button type="button" className="lg:hidden" onClick={() => setOpen(false)} aria-label="Schließen">
@@ -120,6 +123,12 @@ export function AppShell({
             <NavList items={SYSTEM} pathname={pathname} onNavigate={() => setOpen(false)} />
           </div>
         </div>
+
+        {preview ? (
+          <p className="mt-4 px-2.5 text-[11px] leading-5 text-subtle">
+            Acht Live-Sites im Katalog. Echte Leads nach Supabase-Connect.
+          </p>
+        ) : null}
       </aside>
 
       <div className="min-w-0">
@@ -137,27 +146,43 @@ export function AppShell({
           </form>
           <Link
             href="/leads?status=new"
-            className="rounded-xl p-2 text-muted transition hover:bg-white/10 hover:text-foreground"
+            className="relative rounded-xl p-2 text-muted transition hover:bg-white/10 hover:text-foreground"
             aria-label="Neue Leads"
           >
             <Bell size={16} />
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-warning" />
           </Link>
-          <form action="/logout" method="post">
-            <button
-              type="submit"
-              className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left text-xs text-muted transition hover:bg-white/10"
-            >
+          {preview ? (
+            <div className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-xs text-muted">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground ring-1 ring-border">
                 {initial}
               </span>
               <span className="hidden sm:block">
                 <span className="block max-w-[140px] truncate text-foreground">{user.email}</span>
-                <span className="text-subtle">Abmelden</span>
+                <span className="text-subtle">Vorschau</span>
               </span>
-            </button>
-          </form>
+            </div>
+          ) : (
+            <form action="/logout" method="post">
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left text-xs text-muted transition hover:bg-white/10"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground ring-1 ring-border">
+                  {initial}
+                </span>
+                <span className="hidden sm:block">
+                  <span className="block max-w-[140px] truncate text-foreground">{user.email}</span>
+                  <span className="text-subtle">Abmelden</span>
+                </span>
+              </button>
+            </form>
+          )}
         </header>
-        <main className="px-4 py-8 md:px-8">{children}</main>
+        <main className="px-4 py-8 md:px-8">
+          {preview ? <PreviewBanner /> : null}
+          {children}
+        </main>
       </div>
     </div>
   );

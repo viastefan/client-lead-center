@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import type { Profile, SessionUser, UserRole } from "@/types";
+import { isPreviewMode, previewUser } from "@/lib/data/workspace";
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   if (!isSupabaseConfigured()) {
@@ -40,6 +41,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 }
 
 export async function requireSessionUser(): Promise<SessionUser> {
+  if (isPreviewMode()) {
+    return previewUser();
+  }
   const user = await getSessionUser();
   if (!user) {
     redirect("/login");

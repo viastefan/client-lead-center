@@ -1,14 +1,40 @@
-import { PageHeader, Panel } from "@/components/ui";
+import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { requireSessionUser } from "@/lib/auth/session";
+import { isPreviewMode } from "@/lib/data/workspace";
+import {
+  hasClaudeKey,
+  hasGoogleOAuth,
+  hasMicrosoftOAuth,
+  hasResendKey,
+  isSupabaseAdminConfigured,
+  isSupabaseConfigured,
+} from "@/lib/env";
 
 export const metadata = { title: "Einstellungen" };
 
 export default async function SettingsPage() {
   const user = await requireSessionUser();
+  const preview = isPreviewMode();
+
+  const checks = [
+    { label: "Supabase URL + Anon Key", ok: isSupabaseConfigured() },
+    { label: "Service Role Key", ok: isSupabaseAdminConfigured() },
+    { label: "Resend", ok: hasResendKey() },
+    { label: "Gmail OAuth", ok: hasGoogleOAuth() },
+    { label: "Microsoft OAuth", ok: hasMicrosoftOAuth() },
+    { label: "Claude", ok: hasClaudeKey() },
+  ];
 
   return (
     <>
       <PageHeader title="Einstellungen" description="Konto und Mandantenfähigkeit. Passwörter werden ausschließlich über Supabase Auth verwaltet." />
+      {preview ? (
+        <div className="glass mb-6 rounded-3xl px-5 py-4 text-sm leading-6 text-muted">
+          Die App läuft als Vorschau. Tragen Sie in Vercel die Env-Variablen für{" "}
+          <code className="font-mono text-foreground">fneitubfxquybvexlole</code> ein und spielen Sie die
+          SQL-Migrationen ein, dann werden echte Leads gespeichert.
+        </div>
+      ) : null}
       <Panel title="Konto">
         <dl className="space-y-3 text-sm">
           <div>
@@ -21,14 +47,28 @@ export default async function SettingsPage() {
           </div>
         </dl>
       </Panel>
-      <Panel title="Sicherheit">
-        <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
-          <li>API-Keys werden nur als Hash gespeichert.</li>
-          <li>Service-Role-Keys gehören ausschließlich auf den Server.</li>
-          <li>Kundenwebsites dürfen den Lead-API-Key nicht im Browser ausliefern.</li>
-          <li>Vercel Blob wird nicht verwendet. Dateien liegen in Supabase Storage.</li>
-        </ul>
-      </Panel>
+      <div className="mt-6">
+        <Panel title="Umgebung">
+          <ul className="space-y-3">
+            {checks.map((item) => (
+              <li key={item.label} className="flex items-center justify-between text-sm">
+                <span>{item.label}</span>
+                <StatusBadge tone={item.ok ? "success" : "warning"}>{item.ok ? "OK" : "Offen"}</StatusBadge>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      </div>
+      <div className="mt-6">
+        <Panel title="Sicherheit">
+          <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-muted">
+            <li>API-Keys werden nur als Hash gespeichert.</li>
+            <li>Service-Role-Keys gehören ausschließlich auf den Server.</li>
+            <li>Kundenwebsites dürfen den Lead-API-Key nicht im Browser ausliefern.</li>
+            <li>Vercel Blob wird nicht verwendet. Dateien liegen in Supabase Storage.</li>
+          </ul>
+        </Panel>
+      </div>
     </>
   );
 }

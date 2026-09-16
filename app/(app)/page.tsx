@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { EmptyState, PageHeader, Panel, StatCard, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { getDashboardStats } from "@/lib/services/dashboard";
+import { EntityMark } from "@/components/entity-mark";
+import { loadDashboardStats } from "@/lib/data/workspace";
 import { matchCatalogToWebsites, VERCEL_CUSTOMER_SITES } from "@/lib/catalog/vercel-sites";
 import { formatDateTime, leadStatusLabel } from "@/lib/format";
 import { isSupabaseAdminConfigured, hasClaudeKey, hasResendKey, hasGoogleOAuth, hasMicrosoftOAuth } from "@/lib/env";
@@ -15,9 +15,15 @@ function toneForLead(status: string) {
   return "neutral" as const;
 }
 
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 11) return "Guten Morgen";
+  if (hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const stats = await getDashboardStats(supabase);
+  const stats = await loadDashboardStats();
   const matches = matchCatalogToWebsites(stats.websites);
   const connectedCount = matches.filter((item) => item.website).length;
 
@@ -40,7 +46,7 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title={`${greeting()}`}
         description="Zentrale Lead-Annahme für alle live stehenden Kundenwebsites."
         action={
           <Link href="/integrations" className="btn-ghost">
@@ -95,10 +101,13 @@ export default async function DashboardPage() {
             {matches.map(({ site, website }) => (
               <li key={site.slug} className="rounded-2xl border border-border bg-white/5 px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium">{site.companyName}</p>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <EntityMark name={site.companyName} size="sm" />
+                    <p className="truncate text-sm font-medium">{site.companyName}</p>
+                  </div>
                   <StatusBadge tone={website ? "success" : "warning"}>{website ? "OK" : "Offen"}</StatusBadge>
                 </div>
-                <p className="mt-1 truncate text-xs text-muted">{site.domain}</p>
+                <p className="mt-2 truncate text-xs text-muted">{site.domain}</p>
               </li>
             ))}
           </ul>
@@ -151,8 +160,9 @@ export default async function DashboardPage() {
               <ul className="space-y-3">
                 {stats.customers.slice(0, 6).map((customer) => (
                   <li key={customer.id} className="flex items-center justify-between gap-3">
-                    <Link href={`/clients/${customer.id}`} className="text-sm hover:underline">
-                      {customer.company_name}
+                    <Link href={`/clients/${customer.id}`} className="flex min-w-0 items-center gap-2.5 text-sm hover:underline">
+                      <EntityMark name={customer.company_name} size="sm" />
+                      <span className="truncate">{customer.company_name}</span>
                     </Link>
                     <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
                       {customer.status === "active" ? "Aktiv" : "Inaktiv"}

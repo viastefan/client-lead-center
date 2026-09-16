@@ -1,13 +1,11 @@
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { listEmailAccounts } from "@/lib/services/websites";
+import { loadEmailAccounts } from "@/lib/data/workspace";
 import { emailStatusLabel } from "@/lib/format";
 
 export const metadata = { title: "E-Mails" };
 
 export default async function EmailsPage() {
-  const supabase = await createClient();
-  const accounts = await listEmailAccounts(supabase);
+  const accounts = await loadEmailAccounts();
 
   return (
     <>
@@ -17,7 +15,7 @@ export default async function EmailsPage() {
       />
       <Panel title="Verbindungen">
         {accounts.length === 0 ? (
-          <p className="text-sm text-muted">Keine E-Mail-Konten vorhanden.</p>
+          <p className="text-sm text-muted">Keine E-Mail-Konten vorhanden. OAuth folgt, sobald Gmail oder Microsoft angebunden ist.</p>
         ) : (
           <ul className="divide-y divide-border">
             {accounts.map((account) => (

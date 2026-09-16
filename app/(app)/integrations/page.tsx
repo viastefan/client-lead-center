@@ -2,8 +2,7 @@ import Link from "next/link";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { CopyBlock } from "@/components/copy-block";
 import { ProvisionSitesButton } from "@/components/provision-sites-button";
-import { createClient } from "@/lib/supabase/server";
-import { listWebsites } from "@/lib/services/websites";
+import { isPreviewMode, loadWebsites } from "@/lib/data/workspace";
 import { matchCatalogToWebsites, VERCEL_CUSTOMER_SITES } from "@/lib/catalog/vercel-sites";
 import {
   contactRouteSnippet,
@@ -18,15 +17,9 @@ export const metadata = { title: "Verbindungen" };
 
 export default async function IntegrationsPage() {
   const user = await requireSessionUser();
-  const supabase = await createClient();
-  let websites: Awaited<ReturnType<typeof listWebsites>> = [];
-  let migrationMissing = false;
-
-  try {
-    websites = await listWebsites(supabase);
-  } catch {
-    migrationMissing = true;
-  }
+  const websites = await loadWebsites();
+  const migrationMissing = false;
+  const preview = isPreviewMode();
 
   const matches = matchCatalogToWebsites(websites);
   const connectedCount = matches.filter((item) => item.website).length;
@@ -86,7 +79,7 @@ export default async function IntegrationsPage() {
         <Panel
           title="Live Vercel-Websites"
           description="Katalog der produktiven Kundenprojekte. Anbindung legt Kunde, Website, Allowlist und API-Key in Supabase an."
-          action={canProvision ? <ProvisionSitesButton /> : null}
+          action={canProvision && !preview ? <ProvisionSitesButton /> : null}
         >
           <ul className="divide-y divide-border">
             {matches.map(({ site, website }) => (

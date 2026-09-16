@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { PageHeader, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { listCustomers } from "@/lib/services/customers";
+import { loadCustomers } from "@/lib/data/workspace";
 import { customerStatusLabel, emailStatusLabel, formatDateTime } from "@/lib/format";
 
 export const metadata = { title: "Kunden" };
 
 export default async function ClientsPage() {
-  const supabase = await createClient();
-  const customers = await listCustomers(supabase);
+  const customers = await loadCustomers();
 
   return (
     <>

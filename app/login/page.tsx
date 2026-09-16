@@ -1,7 +1,7 @@
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BrandMark } from "@/components/brand-mark";
 import { LoginForm } from "@/components/login-form";
-import { SetupScreen } from "@/components/setup-screen";
 import { isSupabaseConfigured } from "@/lib/env";
 
 export const metadata = {
@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function LoginPage() {
   if (!isSupabaseConfigured()) {
-    return <SetupScreen />;
+    redirect("/");
   }
 
   return (

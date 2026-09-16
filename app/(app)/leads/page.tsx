@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { PageHeader, StatusBadge } from "@/components/ui";
-import { createClient } from "@/lib/supabase/server";
-import { listLeads } from "@/lib/services/leads";
-import { listCustomers } from "@/lib/services/customers";
-import { listWebsites } from "@/lib/services/websites";
+import { loadCustomers, loadLeads, loadWebsites } from "@/lib/data/workspace";
 import { formatDateTime, leadStatusLabel, priorityLabel } from "@/lib/format";
 import type { LeadStatus } from "@/types";
 
@@ -34,9 +31,8 @@ export default async function LeadsPage({
   }>;
 }) {
   const filters = await searchParams;
-  const supabase = await createClient();
   const [leads, customers, websites] = await Promise.all([
-    listLeads(supabase, {
+    loadLeads({
       status: (filters.status as LeadStatus | "all" | undefined) ?? "all",
       customerId: filters.customerId,
       websiteId: filters.websiteId,
@@ -46,8 +42,8 @@ export default async function LeadsPage({
       from: filters.from,
       to: filters.to,
     }),
-    listCustomers(supabase),
-    listWebsites(supabase),
+    loadCustomers(),
+    loadWebsites(),
   ]);
 
   const status = filters.status ?? "all";
