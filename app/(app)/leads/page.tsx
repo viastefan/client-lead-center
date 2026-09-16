@@ -70,8 +70,8 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-2xl border border-border bg-card p-4 md:grid-cols-4">
-        <select name="customerId" defaultValue={filters.customerId ?? ""} className="h-10 rounded-lg border border-border bg-background px-3 text-sm">
+      <form className="glass mb-6 grid gap-3 rounded-3xl p-4 md:grid-cols-4">
+        <select name="customerId" defaultValue={filters.customerId ?? ""} className="field h-10">
           <option value="">Kunde</option>
           {customers.map((customer) => (
             <option key={customer.id} value={customer.id}>
@@ -79,7 +79,7 @@ export default async function LeadsPage({
             </option>
           ))}
         </select>
-        <select name="websiteId" defaultValue={filters.websiteId ?? ""} className="h-10 rounded-lg border border-border bg-background px-3 text-sm">
+        <select name="websiteId" defaultValue={filters.websiteId ?? ""} className="field h-10">
           <option value="">Website</option>
           {websites.map((site) => (
             <option key={site.id} value={site.id}>
@@ -87,7 +87,7 @@ export default async function LeadsPage({
             </option>
           ))}
         </select>
-        <select name="priority" defaultValue={filters.priority ?? ""} className="h-10 rounded-lg border border-border bg-background px-3 text-sm">
+        <select name="priority" defaultValue={filters.priority ?? ""} className="field h-10">
           <option value="">Priorität</option>
           <option value="low">Niedrig</option>
           <option value="normal">Normal</option>
@@ -98,10 +98,10 @@ export default async function LeadsPage({
           name="q"
           defaultValue={filters.q ?? ""}
           placeholder="Name, E-Mail, Text"
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+          className="field h-10"
         />
         <input type="hidden" name="status" value={status} />
-        <button type="submit" className="h-10 rounded-lg bg-accent text-sm text-white md:col-span-4 md:w-32">
+        <button type="submit" className="btn-primary h-10 md:col-span-4 md:w-32">
           Filtern
         </button>
       </form>
@@ -111,7 +111,7 @@ export default async function LeadsPage({
           <Link
             key={lead.id}
             href={`/leads/${lead.id}`}
-            className="block rounded-2xl border border-border bg-card px-5 py-4 transition hover:bg-background/40"
+            className="glass block rounded-3xl px-5 py-4 transition hover:bg-white/5"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">

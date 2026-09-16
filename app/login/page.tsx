@@ -1,19 +1,23 @@
 import { Suspense } from "react";
+import { BrandMark } from "@/components/brand-mark";
 import { LoginForm } from "@/components/login-form";
+import { SetupScreen } from "@/components/setup-screen";
+import { isSupabaseConfigured } from "@/lib/env";
 
 export const metadata = {
   title: "Anmelden",
 };
 
 export default function LoginPage() {
+  if (!isSupabaseConfigured()) {
+    return <SetupScreen />;
+  }
+
   return (
     <main className="relative flex min-h-full items-center justify-center px-6 py-16">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.9),transparent_55%)]" />
-      <div className="relative w-full max-w-[420px] rounded-2xl border border-border bg-card px-7 py-8">
+      <div className="glass-strong relative w-full max-w-[420px] rounded-3xl px-7 py-8">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-xs font-medium text-white">
-            C
-          </span>
+          <BrandMark />
           <p className="text-sm tracking-wide text-subtle">Client Lead Center</p>
         </div>
         <h1 className="mt-6 text-3xl font-medium tracking-tight">Anmelden</h1>

@@ -23,7 +23,7 @@ export default async function DashboardPage() {
 
   const system = [
     { label: "API", ok: true, note: "Operational" },
-    { label: "Database", ok: true, note: "Operational" },
+    { label: "Database", ok: !stats.migrationMissing, note: stats.migrationMissing ? "Warning" : "Operational" },
     {
       label: "Storage",
       ok: isSupabaseAdminConfigured(),
@@ -43,17 +43,14 @@ export default async function DashboardPage() {
         title="Dashboard"
         description="Zentrale Lead-Annahme für alle live stehenden Kundenwebsites."
         action={
-          <Link
-            href="/integrations"
-            className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-sm transition hover:bg-background"
-          >
+          <Link href="/integrations" className="btn-ghost">
             Verbindungen
           </Link>
         }
       />
 
-      {connectedCount < VERCEL_CUSTOMER_SITES.length ? (
-        <div className="mb-6 rounded-2xl border border-border bg-card px-5 py-4">
+      {stats.migrationMissing || connectedCount < VERCEL_CUSTOMER_SITES.length ? (
+        <div className="glass mb-6 rounded-3xl px-5 py-4">
           <p className="text-sm font-medium">Nächste Schritte</p>
           <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-muted">
             <li>SQL-Migrationen in Supabase ausführen (init + website_connection).</li>
@@ -96,7 +93,7 @@ export default async function DashboardPage() {
         >
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {matches.map(({ site, website }) => (
-              <li key={site.slug} className="rounded-xl border border-border bg-background px-4 py-3">
+              <li key={site.slug} className="rounded-2xl border border-border bg-white/5 px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium">{site.companyName}</p>
                   <StatusBadge tone={website ? "success" : "warning"}>{website ? "OK" : "Offen"}</StatusBadge>

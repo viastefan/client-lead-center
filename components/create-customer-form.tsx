@@ -20,14 +20,14 @@ export function CreateCustomerForm() {
         <textarea
           name="notes"
           rows={4}
-          className="w-full rounded-lg border border-border bg-card px-3 py-2 outline-none ring-foreground/10 focus:ring-2"
+          className="field h-auto py-2"
         />
       </label>
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
       <button
         type="submit"
         disabled={pending}
-        className="h-10 rounded-lg bg-accent px-4 text-sm text-white disabled:opacity-60"
+        className="btn-primary"
       >
         {pending ? "Speichern…" : "Kunde anlegen"}
       </button>
@@ -53,7 +53,7 @@ function Field({
         name={name}
         type={type}
         required={required}
-        className="h-11 w-full rounded-lg border border-border bg-card px-3 outline-none ring-foreground/10 focus:ring-2"
+        className="field"
       />
     </label>
   );

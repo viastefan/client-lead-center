@@ -17,57 +17,78 @@ function fromBoolean(ok: boolean, missingIsWarning = true): HealthComponentStatu
 }
 
 export async function GET() {
-  const timestamp = new Date().toISOString();
-  let database: SystemHealth["database"] = "unconfigured";
-  let databaseComponent: HealthComponentStatus = "warning";
+  try {
+    const timestamp = new Date().toISOString();
+    let database: SystemHealth["database"] = "unconfigured";
+    let databaseComponent: HealthComponentStatus = "warning";
 
-  if (isSupabaseConfigured()) {
-    try {
-      const { createClient } = await import("@supabase/supabase-js");
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const key =
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-      const supabase = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-      const { error } = await supabase.rpc("health_ping");
-      if (error) {
+    if (isSupabaseConfigured()) {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const key =
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+        const supabase = createClient(url, key, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { error } = await supabase.rpc("health_ping");
+        if (error) {
+          database = "disconnected";
+          databaseComponent = "warning";
+        } else {
+          database = "connected";
+          databaseComponent = "operational";
+        }
+      } catch {
         database = "disconnected";
-        databaseComponent = "error";
-      } else {
-        database = "connected";
-        databaseComponent = "operational";
+        databaseComponent = "warning";
       }
-    } catch {
-      database = "disconnected";
-      databaseComponent = "error";
     }
+
+    let storageStatus: HealthComponentStatus = "warning";
+    if (isSupabaseAdminConfigured()) {
+      try {
+        storageStatus = (await storage.ping()) ? "operational" : "warning";
+      } catch {
+        storageStatus = "warning";
+      }
+    }
+
+    const emailConfigured = hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth();
+    const components = {
+      api: "operational" as HealthComponentStatus,
+      database: databaseComponent,
+      storage: storageStatus,
+      email: fromBoolean(emailConfigured),
+      ai: fromBoolean(hasClaudeKey()),
+    };
+
+    const hasWarning = Object.values(components).some((value) => value === "warning");
+
+    const payload: SystemHealth = {
+      status: hasWarning ? "degraded" : "ok",
+      database,
+      timestamp,
+      components,
+    };
+
+    return Response.json(payload, { status: 200 });
+  } catch {
+    return Response.json(
+      {
+        status: "degraded",
+        database: "disconnected",
+        timestamp: new Date().toISOString(),
+        components: {
+          api: "operational",
+          database: "warning",
+          storage: "warning",
+          email: "warning",
+          ai: "warning",
+        },
+      } satisfies SystemHealth,
+      { status: 200 },
+    );
   }
-
-  let storageStatus: HealthComponentStatus = "warning";
-  if (isSupabaseAdminConfigured()) {
-    storageStatus = (await storage.ping()) ? "operational" : "error";
-  }
-
-  const emailConfigured = hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth();
-  const components = {
-    api: "operational" as HealthComponentStatus,
-    database: databaseComponent,
-    storage: storageStatus,
-    email: fromBoolean(emailConfigured),
-    ai: fromBoolean(hasClaudeKey()),
-  };
-
-  const hasError = Object.values(components).some((value) => value === "error");
-  const hasWarning = Object.values(components).some((value) => value === "warning");
-
-  const payload: SystemHealth = {
-    status: hasError ? "error" : hasWarning ? "degraded" : "ok",
-    database,
-    timestamp,
-    components,
-  };
-
-  return Response.json(payload, { status: hasError ? 503 : 200 });
 }

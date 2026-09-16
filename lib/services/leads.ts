@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 import type { Conversation, Customer, Lead, LeadPriority, LeadStatus, Message, Website } from "@/types";
 
 export type LeadListRow = Lead & {
@@ -58,7 +59,8 @@ export async function listLeads(
 
   const { data, error } = await query;
   if (error) {
-    throw error;
+    logger.warn("leads.list_failed", { message: error.message });
+    return [];
   }
 
   return (data ?? []).map((row) => {
@@ -92,7 +94,8 @@ export async function getLead(
 
   const { data, error } = await query.maybeSingle();
   if (error) {
-    throw error;
+    logger.warn("leads.get_failed", { message: error.message });
+    return null;
   }
   if (!data) {
     return null;
@@ -145,7 +148,8 @@ export async function listConversationsForLead(
     .order("created_at", { ascending: true });
 
   if (error) {
-    throw error;
+    logger.warn("leads.conversations_failed", { message: error.message });
+    return [];
   }
 
   const ids = (conversations ?? []).map((row) => row.id);
@@ -163,7 +167,11 @@ export async function listConversationsForLead(
     .order("created_at", { ascending: true });
 
   if (messageError) {
-    throw messageError;
+    logger.warn("leads.messages_failed", { message: messageError.message });
+    return (conversations ?? []).map((conversation) => ({
+      ...(conversation as Conversation),
+      messages: [] as Message[],
+    }));
   }
 
   return (conversations ?? []).map((conversation) => ({
@@ -177,7 +185,8 @@ export async function listConversationsForLead(
 export async function countLeadsByStatus(supabase: SupabaseClient) {
   const { data, error } = await supabase.from("leads").select("status");
   if (error) {
-    throw error;
+    logger.warn("leads.count_failed", { message: error.message });
+    return {};
   }
 
   const counts: Record<string, number> = {};

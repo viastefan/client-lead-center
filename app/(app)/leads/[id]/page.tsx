@@ -84,7 +84,7 @@ export default async function LeadDetailPage({
               </label>
               <label className="block text-sm">
                 <span className="mb-2 block text-muted">Priorität ändern</span>
-                <select name="priority" defaultValue={lead.priority} className="h-10 w-full rounded-lg border border-border bg-background px-3">
+                <select name="priority" defaultValue={lead.priority} className="field h-10 w-full">
                   {LEAD_PRIORITIES.map((priority) => (
                     <option key={priority} value={priority}>
                       {priorityLabel(priority)}
@@ -92,7 +92,7 @@ export default async function LeadDetailPage({
                   ))}
                 </select>
               </label>
-              <button type="submit" className="h-9 rounded-lg bg-accent px-3 text-sm text-white">
+              <button type="submit" className="btn-primary h-9">
                 Speichern
               </button>
             </form>

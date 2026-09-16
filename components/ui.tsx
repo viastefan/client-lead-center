@@ -28,7 +28,7 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
+    <div className="rounded-3xl border border-dashed border-border bg-white/5 px-6 py-12 text-center">
       <p className="text-sm font-medium">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
@@ -44,10 +44,10 @@ export function StatusBadge({
   children: React.ReactNode;
 }) {
   const colors = {
-    neutral: "bg-background text-muted ring-1 ring-border",
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/10 text-warning",
-    danger: "bg-danger/10 text-danger",
+    neutral: "bg-white/5 text-muted ring-1 ring-border",
+    success: "bg-success/12 text-success",
+    warning: "bg-warning/12 text-warning",
+    danger: "bg-danger/12 text-danger",
   } as const;
 
   return (
@@ -67,7 +67,7 @@ export function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card px-5 py-4">
+    <div className="glass rounded-3xl px-5 py-4">
       <p className="text-xs uppercase tracking-wide text-subtle">{label}</p>
       <p className="mt-2 text-[28px] font-medium tracking-tight">{value}</p>
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
@@ -87,7 +87,7 @@ export function Panel({
   description?: string;
 }) {
   return (
-    <section className="rounded-2xl border border-border bg-card">
+    <section className="glass rounded-3xl">
       <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
         <div>
           <h2 className="text-sm font-medium">{title}</h2>

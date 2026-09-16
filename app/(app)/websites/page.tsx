@@ -26,7 +26,7 @@ export default async function WebsitesPage() {
         action={
           <Link
             href="/integrations"
-            className="inline-flex h-9 items-center rounded-lg bg-accent px-3 text-sm text-white"
+            className="btn-primary"
           >
             Verbindungen
           </Link>
@@ -50,7 +50,7 @@ export default async function WebsitesPage() {
         />
       ) : (
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
+          <div className="glass hidden overflow-hidden rounded-3xl md:block">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
                 <tr>
@@ -98,7 +98,7 @@ export default async function WebsitesPage() {
 
           <div className="space-y-3 md:hidden">
             {websites.map((site) => (
-              <Link key={site.id} href={`/websites/${site.id}`} className="block rounded-2xl border border-border bg-card px-4 py-4">
+              <Link key={site.id} href={`/websites/${site.id}`} className="glass block rounded-3xl px-4 py-4">
                 <p className="font-medium">{site.name}</p>
                 <p className="mt-1 text-sm text-muted">
                   {site.customer?.company_name} · {site.domain}

@@ -1,8 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
-const PUBLIC_PATHS = ["/login", "/auth", "/api/health", "/api/leads"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/api/health",
+  "/api/leads",
+  "/icon",
+  "/apple-icon",
+];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -15,7 +23,8 @@ export async function updateSession(request: NextRequest) {
   if (!url || !key) {
     if (!isPublicPath(request.nextUrl.pathname) && request.nextUrl.pathname !== "/") {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/login";
+      redirectUrl.pathname = "/";
+      redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }
     return NextResponse.next({ request });
@@ -45,8 +54,16 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  let user: { sub?: string } | null = null;
+  try {
+    const { data } = await supabase.auth.getClaims();
+    user = data?.claims ?? null;
+  } catch (error) {
+    logger.warn("auth.claims_unavailable", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return supabaseResponse;
+  }
 
   if (!user && !isPublicPath(request.nextUrl.pathname)) {
     const redirectUrl = request.nextUrl.clone();

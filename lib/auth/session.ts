@@ -8,31 +8,35 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     return null;
   }
 
-  const supabase = await createClient();
-  const { data: claimsData, error } = await supabase.auth.getClaims();
-  if (error || !claimsData?.claims) {
+  try {
+    const supabase = await createClient();
+    const { data: claimsData, error } = await supabase.auth.getClaims();
+    if (error || !claimsData?.claims) {
+      return null;
+    }
+
+    const userId = String(claimsData.claims.sub ?? "");
+    const email =
+      typeof claimsData.claims.email === "string" ? claimsData.claims.email : null;
+
+    if (!userId) {
+      return null;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, role, customer_id, full_name, created_at, updated_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    return {
+      id: userId,
+      email,
+      profile: (profile as Profile | null) ?? null,
+    };
+  } catch {
     return null;
   }
-
-  const userId = String(claimsData.claims.sub ?? "");
-  const email =
-    typeof claimsData.claims.email === "string" ? claimsData.claims.email : null;
-
-  if (!userId) {
-    return null;
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role, customer_id, full_name, created_at, updated_at")
-    .eq("id", userId)
-    .maybeSingle();
-
-  return {
-    id: userId,
-    email,
-    profile: (profile as Profile | null) ?? null,
-  };
 }
 
 export async function requireSessionUser(): Promise<SessionUser> {

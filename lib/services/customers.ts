@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 import type { Customer } from "@/types";
 
 export type CustomerListRow = Customer & {
@@ -17,7 +18,8 @@ export async function listCustomers(supabase: SupabaseClient): Promise<CustomerL
     .order("company_name");
 
   if (error) {
-    throw error;
+    logger.warn("customers.list_failed", { message: error.message });
+    return [];
   }
 
   const ids = (customers ?? []).map((customer) => customer.id);
@@ -31,9 +33,9 @@ export async function listCustomers(supabase: SupabaseClient): Promise<CustomerL
     supabase.from("email_accounts").select("customer_id, status").in("customer_id", ids),
   ]);
 
-  if (websites.error) throw websites.error;
-  if (leads.error) throw leads.error;
-  if (emails.error) throw emails.error;
+  if (websites.error) logger.warn("customers.websites_failed", { message: websites.error.message });
+  if (leads.error) logger.warn("customers.leads_failed", { message: leads.error.message });
+  if (emails.error) logger.warn("customers.emails_failed", { message: emails.error.message });
 
   return (customers ?? []).map((customer) => {
     const customerWebsites = websites.data?.filter((row) => row.customer_id === customer.id) ?? [];
@@ -67,7 +69,8 @@ export async function getCustomer(
     .maybeSingle();
 
   if (error) {
-    throw error;
+    logger.warn("customers.get_failed", { message: error.message });
+    return null;
   }
 
   return (data as Customer | null) ?? null;

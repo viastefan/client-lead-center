@@ -47,7 +47,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="h-11 w-full rounded-lg border border-border bg-background px-3 outline-none ring-foreground/10 transition focus:ring-2"
+          className="field"
         />
       </label>
       <label className="block">
@@ -57,15 +57,11 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="h-11 w-full rounded-lg border border-border bg-background px-3 outline-none ring-foreground/10 transition focus:ring-2"
+          className="field"
         />
       </label>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="h-11 w-full rounded-lg bg-accent text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className="btn-primary h-11 w-full">
         {pending ? "Anmelden…" : "Anmelden"}
       </button>
     </form>

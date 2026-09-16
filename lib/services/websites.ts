@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateApiKey, hashApiKey } from "@/lib/crypto";
+import { logger } from "@/lib/logger";
 import type { VercelCustomerSite } from "@/lib/catalog/vercel-sites";
 import type { Customer, EmailAccount, Website } from "@/types";
 
@@ -27,7 +28,8 @@ export async function listWebsites(supabase: SupabaseClient): Promise<WebsiteLis
     .order("name");
 
   if (error) {
-    throw error;
+    logger.warn("websites.list_failed", { message: error.message });
+    return [];
   }
 
   return (data ?? []).map((row) => {
@@ -53,7 +55,8 @@ export async function getWebsite(
     .maybeSingle();
 
   if (error) {
-    throw error;
+    logger.warn("websites.get_failed", { message: error.message });
+    return null;
   }
   if (!data) {
     return null;
@@ -77,7 +80,8 @@ export async function listWebsitesForCustomer(
     .order("name");
 
   if (error) {
-    throw error;
+    logger.warn("websites.list_for_customer_failed", { message: error.message });
+    return [];
   }
 
   return ((data ?? []) as Website[]).map(normalizeWebsite);
@@ -94,7 +98,8 @@ export async function getWebsiteByVercelProject(
     .maybeSingle();
 
   if (error) {
-    throw error;
+    logger.warn("websites.by_vercel_failed", { message: error.message });
+    return null;
   }
   return data ? normalizeWebsite(data as Website) : null;
 }
@@ -173,7 +178,8 @@ export async function listEmailAccountsForCustomer(
     .order("email");
 
   if (error) {
-    throw error;
+    logger.warn("email_accounts.list_for_customer_failed", { message: error.message });
+    return [];
   }
 
   return (data ?? []) as EmailAccount[];
@@ -190,7 +196,8 @@ export async function listEmailAccounts(supabase: SupabaseClient): Promise<
     .order("email");
 
   if (error) {
-    throw error;
+    logger.warn("email_accounts.list_failed", { message: error.message });
+    return [];
   }
 
   return (data ?? []).map((row) => {

@@ -25,7 +25,7 @@ export function CopyBlock({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background">
+    <div className="overflow-hidden rounded-2xl border border-border bg-black/20">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
         <p className="text-xs font-medium uppercase tracking-wide text-subtle">{label}</p>
         <button

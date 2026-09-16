@@ -18,14 +18,14 @@ export default async function ClientsPage() {
         action={
           <Link
             href="/clients/new"
-            className="inline-flex h-9 items-center rounded-lg bg-accent px-3 text-sm text-white"
+            className="btn-primary"
           >
             + Kunde
           </Link>
         }
       />
 
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
+      <div className="glass hidden overflow-hidden rounded-3xl md:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
             <tr>
@@ -68,7 +68,7 @@ export default async function ClientsPage() {
           <Link
             key={customer.id}
             href={`/clients/${customer.id}`}
-            className="block rounded-2xl border border-border bg-card px-4 py-4"
+            className="glass block rounded-3xl px-4 py-4"
           >
             <div className="flex items-center justify-between gap-3">
               <p className="font-medium">{customer.company_name}</p>

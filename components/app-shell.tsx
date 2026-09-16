@@ -17,6 +17,7 @@ import {
   Workflow,
   X,
 } from "lucide-react";
+import { BrandMark } from "@/components/brand-mark";
 import type { SessionUser } from "@/types";
 
 const PRIMARY = [
@@ -57,10 +58,10 @@ function NavList({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition ${
+            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] transition ${
               active
-                ? "bg-background font-medium text-foreground shadow-[inset_0_0_0_1px_var(--border)]"
-                : "text-muted hover:bg-background/80 hover:text-foreground"
+                ? "bg-white/10 font-medium text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                : "text-muted hover:bg-white/5 hover:text-foreground"
             }`}
           >
             <Icon size={15} strokeWidth={1.6} />
@@ -88,22 +89,20 @@ export function AppShell({
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/45 backdrop-blur-sm lg:hidden"
           aria-label="Navigation schließen"
           onClick={() => setOpen(false)}
         />
       ) : null}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-border bg-card px-3 py-5 transition-transform lg:static lg:translate-x-0 ${
+        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col rounded-none border-y-0 border-l-0 px-3 py-5 transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[11px] font-medium text-white">
-              C
-            </span>
+            <BrandMark size="sm" />
             <div>
               <p className="text-[13px] font-medium tracking-tight">Client Lead Center</p>
               <p className="text-[11px] text-subtle">Operations</p>
@@ -124,11 +123,11 @@ export function AppShell({
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur md:px-8">
+        <header className="glass sticky top-0 z-20 flex h-14 items-center gap-3 rounded-none border-x-0 border-t-0 px-4 md:px-8">
           <button type="button" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Navigation öffnen">
             <Menu size={18} />
           </button>
-          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2">
+          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-white/5 px-3">
             <Search size={15} className="shrink-0 text-subtle" />
             <input
               name="q"
@@ -138,7 +137,7 @@ export function AppShell({
           </form>
           <Link
             href="/leads?status=new"
-            className="rounded-lg p-2 text-muted transition hover:bg-card hover:text-foreground"
+            className="rounded-xl p-2 text-muted transition hover:bg-white/10 hover:text-foreground"
             aria-label="Neue Leads"
           >
             <Bell size={16} />
@@ -146,9 +145,9 @@ export function AppShell({
           <form action="/logout" method="post">
             <button
               type="submit"
-              className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left text-xs text-muted transition hover:bg-card"
+              className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left text-xs text-muted transition hover:bg-white/10"
             >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-[11px] font-medium text-foreground ring-1 ring-border">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground ring-1 ring-border">
                 {initial}
               </span>
               <span className="hidden sm:block">

@@ -36,7 +36,7 @@ export function ProvisionSitesButton() {
         type="button"
         onClick={onProvision}
         disabled={pending}
-        className="inline-flex h-9 items-center rounded-lg bg-accent px-3 text-sm text-white transition hover:opacity-90 disabled:opacity-60"
+        className="btn-primary"
       >
         {pending ? "Binde an…" : "Alle Live-Websites anbinden"}
       </button>
