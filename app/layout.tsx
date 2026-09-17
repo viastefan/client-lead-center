@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     default: "Client Lead Center",
     template: "%s · Client Lead Center",
   },
-  description: "Internes Operations-System für Kunden, Websites und Leads.",
+  description: "Internes Operations-System für Kunden, Leads, Angebote und Rechnungen.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

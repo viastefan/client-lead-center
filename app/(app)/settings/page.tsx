@@ -1,4 +1,5 @@
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { CompanySettingsForm } from "@/components/settings/company-form";
 import { requireSessionUser } from "@/lib/auth/session";
 import { isPreviewMode } from "@/lib/data/workspace";
 import {
@@ -27,27 +28,28 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Einstellungen" description="Konto und Mandantenfähigkeit. Passwörter werden ausschließlich über Supabase Auth verwaltet." />
-      {preview ? (
-        <div className="glass mb-6 rounded-3xl px-5 py-4 text-sm leading-6 text-muted">
-          Die App läuft als Vorschau. Tragen Sie in Vercel die Env-Variablen für{" "}
-          <code className="font-mono text-foreground">fneitubfxquybvexlole</code> ein und spielen Sie die
-          SQL-Migrationen ein, dann werden echte Leads gespeichert.
-        </div>
-      ) : null}
-      <Panel title="Konto">
-        <dl className="space-y-3 text-sm">
-          <div>
-            <dt className="text-subtle">E-Mail</dt>
-            <dd className="mt-1">{user.email}</dd>
-          </div>
-          <div>
-            <dt className="text-subtle">Rolle</dt>
-            <dd className="mt-1">{user.profile?.role ?? "unbekannt"}</dd>
-          </div>
-        </dl>
-      </Panel>
-      <div className="mt-6">
+      <PageHeader
+        title="Einstellungen"
+        description="Firma, Steuer, Bank, Nummernkreise und Designvorlagen. Umgebung getrennt darunter."
+      />
+      <CompanySettingsForm />
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <Panel title="Konto">
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-subtle">E-Mail</dt>
+              <dd className="mt-1">{user.email}</dd>
+            </div>
+            <div>
+              <dt className="text-subtle">Rolle</dt>
+              <dd className="mt-1">{user.profile?.role ?? "unbekannt"}</dd>
+            </div>
+            <div>
+              <dt className="text-subtle">Speicher</dt>
+              <dd className="mt-1">{preview ? "Dieser Browser (lokal)" : "Supabase Postgres"}</dd>
+            </div>
+          </dl>
+        </Panel>
         <Panel title="Umgebung">
           <ul className="space-y-3">
             {checks.map((item) => (
@@ -65,7 +67,7 @@ export default async function SettingsPage() {
             <li>API-Keys werden nur als Hash gespeichert.</li>
             <li>Service-Role-Keys gehören ausschließlich auf den Server.</li>
             <li>Kundenwebsites dürfen den Lead-API-Key nicht im Browser ausliefern.</li>
-            <li>Vercel Blob wird nicht verwendet. Dateien liegen in Supabase Storage.</li>
+            <li>Rechnungen in der Vorschau liegen nur auf diesem Gerät, bis die Billing-Migration läuft.</li>
           </ul>
         </Panel>
       </div>

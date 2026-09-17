@@ -4,7 +4,15 @@ import { EntityMark } from "@/components/entity-mark";
 import { loadDashboardStats } from "@/lib/data/workspace";
 import { matchCatalogToWebsites, VERCEL_CUSTOMER_SITES } from "@/lib/catalog/vercel-sites";
 import { formatDateTime, leadStatusLabel } from "@/lib/format";
-import { isSupabaseAdminConfigured, hasClaudeKey, hasResendKey, hasGoogleOAuth, hasMicrosoftOAuth } from "@/lib/env";
+import { FinancePulse } from "@/components/billing/finance-pulse";
+import { RecentDocuments } from "@/components/billing/recent-documents";
+import {
+  hasClaudeKey,
+  hasGoogleOAuth,
+  hasMicrosoftOAuth,
+  hasResendKey,
+  isSupabaseAdminConfigured,
+} from "@/lib/env";
 
 export const metadata = { title: "Dashboard" };
 
@@ -47,19 +55,26 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={`${greeting()}`}
-        description="Zentrale Lead-Annahme für alle live stehenden Kundenwebsites."
+        description="Leads, Angebote und Rechnungen in einer ruhigen Oberfläche."
         action={
-          <Link href="/integrations" className="btn-ghost">
-            Verbindungen
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/invoices/new" className="btn-ghost">
+              Rechnung
+            </Link>
+            <Link href="/quotes/new" className="btn-primary">
+              Angebot
+            </Link>
+          </div>
         }
       />
+
+      <FinancePulse />
 
       {stats.migrationMissing || connectedCount < VERCEL_CUSTOMER_SITES.length ? (
         <div className="glass mb-6 rounded-3xl px-5 py-4">
           <p className="text-sm font-medium">Nächste Schritte</p>
           <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-muted">
-            <li>SQL-Migrationen in Supabase ausführen (init + website_connection).</li>
+            <li>SQL-Migrationen in Supabase ausführen (init, website_connection, billing).</li>
             <li>
               Unter{" "}
               <Link href="/integrations" className="underline hover:text-foreground">
@@ -115,14 +130,16 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <Panel
-          title="Letzte Leads"
-          action={
-            <Link href="/leads" className="text-sm text-muted hover:text-foreground">
-              Alle
-            </Link>
-          }
-        >
+        <div className="space-y-6">
+          <RecentDocuments />
+          <Panel
+            title="Letzte Leads"
+            action={
+              <Link href="/leads" className="text-sm text-muted hover:text-foreground">
+                Alle
+              </Link>
+            }
+          >
           {stats.recentLeads.length === 0 ? (
             <EmptyState title="Keine Leads" description="Sobald eine Kundenwebsite Anfragen sendet, erscheinen sie hier." />
           ) : (
@@ -151,6 +168,7 @@ export default async function DashboardPage() {
             </ul>
           )}
         </Panel>
+        </div>
 
         <div className="space-y-6">
           <Panel title="Kundenübersicht">

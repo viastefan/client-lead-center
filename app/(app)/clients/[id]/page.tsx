@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DocumentList } from "@/components/billing/document-list";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import {
   loadAutomationsForCustomer,
@@ -15,6 +16,7 @@ export const metadata = { title: "Kunde" };
 
 const TABS = [
   { id: "overview", label: "Übersicht" },
+  { id: "documents", label: "Dokumente" },
   { id: "websites", label: "Websites" },
   { id: "leads", label: "Leads" },
   { id: "email", label: "E-Mail" },
@@ -49,9 +51,17 @@ export default async function ClientDetailPage({
         title={customer.company_name}
         description={`${customer.contact_name} · ${customer.contact_email}`}
         action={
-          <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
-            {customerStatusLabel(customer.status)}
-          </StatusBadge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={`/quotes/new?customer=${customer.id}`} className="btn-ghost">
+              Angebot
+            </Link>
+            <Link href={`/invoices/new?customer=${customer.id}`} className="btn-ghost">
+              Rechnung
+            </Link>
+            <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
+              {customerStatusLabel(customer.status)}
+            </StatusBadge>
+          </div>
         }
       />
 
@@ -82,6 +92,14 @@ export default async function ClientDetailPage({
           </Link>
         ))}
       </div>
+
+      {tab === "overview" || tab === "documents" ? (
+        <div className={tab === "overview" ? "mb-6" : ""}>
+          <Panel title="Angebote & Rechnungen" description="Dokumente zu diesem Kunden.">
+            <DocumentList customerId={customer.id} />
+          </Panel>
+        </div>
+      ) : null}
 
       {tab === "overview" || tab === "leads" ? (
         <Panel title="Leads">

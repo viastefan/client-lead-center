@@ -10,7 +10,7 @@ export function PageHeader({
   return (
     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-[28px] font-medium tracking-tight">{title}</h1>
+        <h1 className="text-[30px] font-medium tracking-[-0.04em]">{title}</h1>
         {description ? <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{description}</p> : null}
       </div>
       {action}
@@ -67,9 +67,9 @@ export function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="glass rounded-3xl px-5 py-4">
-      <p className="text-xs uppercase tracking-wide text-subtle">{label}</p>
-      <p className="mt-2 text-[28px] font-medium tracking-tight">{value}</p>
+    <div className="glass rounded-[28px] px-5 py-4">
+      <p className="kicker">{label}</p>
+      <p className="mt-2 text-[28px] font-medium tracking-[-0.045em]">{value}</p>
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
     </div>
   );
@@ -87,7 +87,7 @@ export function Panel({
   description?: string;
 }) {
   return (
-    <section className="glass rounded-3xl">
+    <section className="glass rounded-[28px]">
       <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
         <div>
           <h2 className="text-sm font-medium">{title}</h2>

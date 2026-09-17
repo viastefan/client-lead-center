@@ -4,17 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  Archive,
   Bell,
+  FileText,
   Inbox,
   LayoutGrid,
-  Mail,
   Menu,
   Plug,
+  Receipt,
   Search,
   Settings,
   Users,
   Globe,
-  Workflow,
   X,
 } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
@@ -22,15 +23,19 @@ import { PreviewBanner } from "@/components/preview-banner";
 import type { SessionUser } from "@/types";
 
 const PRIMARY = [
-  { href: "/", label: "Dashboard", icon: LayoutGrid },
+  { href: "/", label: "Übersicht", icon: LayoutGrid },
   { href: "/clients", label: "Kunden", icon: Users },
-  { href: "/websites", label: "Websites", icon: Globe },
   { href: "/leads", label: "Leads", icon: Inbox },
 ];
 
+const FINANCE = [
+  { href: "/quotes", label: "Angebote", icon: FileText },
+  { href: "/invoices", label: "Rechnungen", icon: Receipt },
+  { href: "/archive", label: "Archiv", icon: Archive },
+];
+
 const SYSTEM = [
-  { href: "/emails", label: "E-Mails", icon: Mail },
-  { href: "/automations", label: "Automationen", icon: Workflow },
+  { href: "/websites", label: "Websites", icon: Globe },
   { href: "/integrations", label: "Verbindungen", icon: Plug },
   { href: "/settings", label: "Einstellungen", icon: Settings },
 ];
@@ -59,13 +64,13 @@ function NavList({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] transition ${
+            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[13px] tracking-[-0.01em] transition ${
               active
-                ? "bg-white/10 font-medium text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                : "text-muted hover:bg-white/5 hover:text-foreground"
+                ? "bg-white/[0.09] font-medium text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                : "text-muted hover:bg-white/[0.045] hover:text-foreground"
             }`}
           >
-            <Icon size={15} strokeWidth={1.6} />
+            <Icon size={15} strokeWidth={1.5} />
             {item.label}
           </Link>
         );
@@ -88,7 +93,7 @@ export function AppShell({
   const initial = (user.profile?.full_name || user.email || "A").slice(0, 1).toUpperCase();
 
   return (
-    <div className="min-h-full lg:grid lg:grid-cols-[248px_1fr]">
+    <div className="min-h-full lg:grid lg:grid-cols-[220px_1fr]">
       {open ? (
         <button
           type="button"
@@ -99,7 +104,7 @@ export function AppShell({
       ) : null}
 
       <aside
-        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col rounded-none border-y-0 border-l-0 px-3 py-5 transition-transform lg:static lg:translate-x-0 ${
+        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col rounded-none border-y-0 border-l-0 px-3 py-5 transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -107,8 +112,8 @@ export function AppShell({
           <div className="flex items-center gap-2.5">
             <BrandMark size="sm" />
             <div>
-              <p className="text-[13px] font-medium tracking-tight">Client Lead Center</p>
-              <p className="text-[11px] text-subtle">{preview ? "Vorschau" : "Operations"}</p>
+              <p className="text-[13px] font-medium tracking-tight">Lead Center</p>
+              <p className="text-[11px] text-subtle">{preview ? "Studio" : "Operations"}</p>
             </div>
           </div>
           <button type="button" className="lg:hidden" onClick={() => setOpen(false)} aria-label="Schließen">
@@ -119,16 +124,14 @@ export function AppShell({
         <div className="mt-7 flex-1 space-y-6 overflow-y-auto px-0.5">
           <NavList items={PRIMARY} pathname={pathname} onNavigate={() => setOpen(false)} />
           <div>
-            <p className="mb-2 px-2.5 text-[11px] font-medium uppercase tracking-wider text-subtle">System</p>
+            <p className="kicker mb-2 px-2.5">Finanzen</p>
+            <NavList items={FINANCE} pathname={pathname} onNavigate={() => setOpen(false)} />
+          </div>
+          <div>
+            <p className="kicker mb-2 px-2.5">System</p>
             <NavList items={SYSTEM} pathname={pathname} onNavigate={() => setOpen(false)} />
           </div>
         </div>
-
-        {preview ? (
-          <p className="mt-4 px-2.5 text-[11px] leading-5 text-subtle">
-            Acht Live-Sites im Katalog. Echte Leads nach Supabase-Connect.
-          </p>
-        ) : null}
       </aside>
 
       <div className="min-w-0">
@@ -136,21 +139,26 @@ export function AppShell({
           <button type="button" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Navigation öffnen">
             <Menu size={18} />
           </button>
-          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-white/5 px-3">
+          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white/5 px-3">
             <Search size={15} className="shrink-0 text-subtle" />
             <input
               name="q"
-              placeholder="Leads, Kunden, Domains suchen"
+              placeholder="Suchen"
               className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-subtle"
             />
           </form>
+          <Link href="/quotes/new" className="btn-ghost hidden h-9 sm:inline-flex">
+            Angebot
+          </Link>
+          <Link href="/invoices/new" className="btn-ghost hidden h-9 md:inline-flex">
+            Rechnung
+          </Link>
           <Link
             href="/leads?status=new"
             className="relative rounded-xl p-2 text-muted transition hover:bg-white/10 hover:text-foreground"
             aria-label="Neue Leads"
           >
             <Bell size={16} />
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-warning" />
           </Link>
           {preview ? (
             <div className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-xs text-muted">
@@ -159,7 +167,7 @@ export function AppShell({
               </span>
               <span className="hidden sm:block">
                 <span className="block max-w-[140px] truncate text-foreground">{user.email}</span>
-                <span className="text-subtle">Vorschau</span>
+                <span className="text-subtle">Lokal gespeichert</span>
               </span>
             </div>
           ) : (
@@ -179,7 +187,7 @@ export function AppShell({
             </form>
           )}
         </header>
-        <main className="px-4 py-8 md:px-8">
+        <main className="mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8">
           {preview ? <PreviewBanner /> : null}
           {children}
         </main>
