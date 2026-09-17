@@ -190,8 +190,8 @@ export function CompanySettingsForm() {
         />
       </Panel>
 
-      <div className="sticky bottom-4 z-10 flex justify-end">
-        <button type="submit" className="btn-primary shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+      <div className="flex justify-end pt-2">
+        <button type="submit" className="btn-primary">
           {saved ? "Gespeichert" : "Einstellungen speichern"}
         </button>
       </div>
