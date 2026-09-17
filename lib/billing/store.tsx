@@ -71,29 +71,33 @@ function noteFor(company: CompanyProfile, kind: DocumentKind): string {
 
 function readState(): BillingState {
   const fallback = emptyBillingState();
-  if (typeof window === "undefined") return fallback;
+  const hydrate = (state: BillingState): BillingState => ({
+    ...state,
+    documents: state.documents.map((doc) =>
+      withOverdue({
+        ...doc,
+        paymentToken: doc.paymentToken || newPaymentToken(),
+      }),
+    ),
+  });
+  if (typeof window === "undefined") return hydrate(fallback);
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
+    if (!raw) return hydrate(fallback);
     const parsed = JSON.parse(raw) as BillingState;
     if (parsed.version !== 1 || !parsed.company || !Array.isArray(parsed.documents)) {
-      return fallback;
+      return hydrate(fallback);
     }
-    return {
+    return hydrate({
       ...fallback,
       ...parsed,
       company: { ...fallback.company, ...parsed.company },
       sequences: { ...fallback.sequences, ...parsed.sequences },
       reminders: Array.isArray(parsed.reminders) ? parsed.reminders : fallback.reminders,
-      documents: parsed.documents.map((doc) =>
-        withOverdue({
-          ...doc,
-          paymentToken: doc.paymentToken || newPaymentToken(),
-        }),
-      ),
-    };
+      documents: parsed.documents,
+    });
   } catch {
-    return fallback;
+    return hydrate(fallback);
   }
 }
 
