@@ -14,7 +14,7 @@ export function SetupScreen() {
         <code className="font-mono text-foreground">fneitubfxquybvexlole</code> und die beiden
         SQL-Migrationen. Danach binden Sie unter Verbindungen alle Live-Websites an.
       </p>
-      <ul className="glass mt-8 divide-y divide-border overflow-hidden rounded-3xl">
+      <ul className="glass mt-8 divide-y divide-border overflow-hidden rounded-lg">
         {VERCEL_CUSTOMER_SITES.map((site) => (
           <li key={site.slug} className="flex items-start justify-between gap-4 px-5 py-3.5">
             <div className="min-w-0">

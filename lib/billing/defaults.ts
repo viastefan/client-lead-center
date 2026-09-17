@@ -1,5 +1,6 @@
 import { demoCustomers } from "@/lib/demo/workspace";
-import type { BillingState, BusinessDocument, CompanyProfile, LineItem } from "./types";
+import { newPaymentToken } from "./payment";
+import type { BillingState, BusinessDocument, CompanyProfile, LineItem, Reminder } from "./types";
 
 export const STORAGE_KEY = "clc.billing.v1";
 
@@ -24,8 +25,10 @@ export const DEFAULT_COMPANY: CompanyProfile = {
   paymentDays: 14,
   quotePrefix: "ANG",
   invoicePrefix: "RE",
+  contractPrefix: "VER",
   quoteNote: "Das Angebot ist 14 Tage gültig. Alle Preise in EUR zzgl. gesetzlicher MwSt., sofern nicht anders ausgewiesen.",
-  invoiceNote: "Bitte überweisen Sie den Betrag innerhalb der Zahlungsfrist unter Angabe der Rechnungsnummer.",
+  invoiceNote: "Bitte überweisen Sie den Betrag innerhalb der Zahlungsfrist unter Angabe der Rechnungsnummer. Den Zahlungslink finden Sie in der E-Mail.",
+  contractNote: "Der Vertrag beginnt mit Unterzeichnung und verlängert sich um 12 Monate, wenn er nicht mit einer Frist von 30 Tagen gekündigt wird.",
   footer: "Vielen Dank für Ihr Vertrauen.",
   defaultTemplate: "atelier",
   defaultUnit: "Stück",
@@ -33,6 +36,10 @@ export const DEFAULT_COMPANY: CompanyProfile = {
   skontoDays: 0,
   quoteEmailSubject: "Angebot {number} – {company}",
   invoiceEmailSubject: "Rechnung {number} – {company}",
+  contractEmailSubject: "Vertrag {number} – {company}",
+  paypalUrl: "",
+  stripePaymentUrl: "",
+  paymentNote: "Bitte überweisen Sie den Betrag oder nutzen Sie den Zahlungslink.",
 };
 
 function item(partial: Omit<LineItem, "id"> & { id?: string }): LineItem {
@@ -91,6 +98,7 @@ export function seedDocuments(now = "2026-09-17T09:00:00.000Z"): BusinessDocumen
       updatedAt: now,
       archivedAt: null,
       convertedFromId: null,
+      paymentToken: "payabelen01",
     },
     {
       id: "doc-invoice-avs",
@@ -104,7 +112,7 @@ export function seedDocuments(now = "2026-09-17T09:00:00.000Z"): BusinessDocumen
       customerEmail: avs.contact_email,
       customerAddress: "München Airport",
       issueDate: issue,
-      dueDate: isoDaysFrom(now, 14),
+      dueDate: isoDaysFrom(now, -5),
       intro: "Rechnung für Verpackungs-Website und Lead-Routing.",
       notes: DEFAULT_COMPANY.invoiceNote,
       taxRate: 19,
@@ -123,6 +131,56 @@ export function seedDocuments(now = "2026-09-17T09:00:00.000Z"): BusinessDocumen
       updatedAt: now,
       archivedAt: null,
       convertedFromId: null,
+      paymentToken: "payavs00001",
+    },
+    {
+      id: "doc-contract-festag",
+      kind: "contract",
+      number: "VER-2026-0001",
+      status: "active",
+      templateId: "noir",
+      customerId: (customers[4] ?? customers[0]).id,
+      customerName: (customers[4] ?? customers[0]).company_name,
+      customerContact: (customers[4] ?? customers[0]).contact_name,
+      customerEmail: (customers[4] ?? customers[0]).contact_email,
+      customerAddress: "München",
+      issueDate: issue,
+      dueDate: isoDaysFrom(now, 365),
+      intro: "Betreuungsvertrag für Website, Leads und monatliche Operations.",
+      notes: DEFAULT_COMPANY.contractNote,
+      taxRate: 19,
+      currency: "EUR",
+      items: [
+        item({
+          id: "item-festag-retainer",
+          title: "Jahresbetreuung",
+          description: "Website, Formulare, Lead-Center und Reporting.",
+          qty: 12,
+          unit: "Monat",
+          unitPrice: 490,
+        }),
+      ],
+      createdAt: now,
+      updatedAt: now,
+      archivedAt: null,
+      convertedFromId: null,
+      paymentToken: "payfestag01",
+    },
+  ];
+}
+
+export function seedReminders(now = "2026-09-17T09:00:00.000Z"): Reminder[] {
+  return [
+    {
+      id: "rem-follow-abelen",
+      title: "Abelen Angebot nachfassen",
+      note: "Kurzer Anruf, ob das Angebot passt.",
+      dueDate: now.slice(0, 10),
+      status: "open",
+      source: "quote",
+      relatedId: "doc-quote-abelen",
+      customerName: "Abelen Immobilien",
+      createdAt: now,
     },
   ];
 }
@@ -132,9 +190,12 @@ export function emptyBillingState(): BillingState {
     version: 1,
     company: DEFAULT_COMPANY,
     documents: seedDocuments(),
-    sequences: { quote: 1, invoice: 1 },
+    reminders: seedReminders(),
+    sequences: { quote: 1, invoice: 1, contract: 1 },
   };
 }
+
+export { newPaymentToken };
 
 export function newLineItem(unit = DEFAULT_COMPANY.defaultUnit): LineItem {
   return {

@@ -33,12 +33,17 @@ export function DocumentList({
       });
   }, [archived, customerId, documents, kind, query]);
 
-  const title = archived ? "Archiv" : kind === "quote" ? "Angebote" : kind === "invoice" ? "Rechnungen" : "Dokumente";
+  const title =
+    archived ? "Archiv" : kind === "quote" ? "Angebote" : kind === "invoice" ? "Rechnungen" : kind === "contract" ? "Verträge" : "Dokumente";
   const description = archived
-    ? "Abgelegte Angebote und Rechnungen. Wiederherstellen jederzeit möglich."
+    ? "Abgelegte Angebote, Rechnungen und Verträge."
     : kind === "quote"
-      ? "Angebote schreiben, senden und in Rechnungen wandeln."
-      : "Rechnungen mit Vorlagen, MwSt. und Zahlungsziel.";
+      ? "Angebote schreiben, senden und in Rechnung oder Vertrag wandeln."
+      : kind === "invoice"
+        ? "Rechnungen mit Vorlagen, Zahlungslink und MwSt."
+        : kind === "contract"
+          ? "Verträge mit Laufzeit, Vorlagen und Erinnerungen."
+          : "Dokumente zu diesem Kunden.";
 
   return (
     <>
@@ -49,14 +54,14 @@ export function DocumentList({
           action={
             kind && !archived ? (
               <Link href={`${kindHref(kind)}/new`} className="btn-primary">
-                {kind === "quote" ? "Neues Angebot" : "Neue Rechnung"}
+                {kind === "quote" ? "Neues Angebot" : kind === "invoice" ? "Neue Rechnung" : "Neuer Vertrag"}
               </Link>
             ) : null
           }
         />
       )}
 
-      <div className="glass mb-6 flex items-center rounded-2xl px-4">
+      <div className="glass mb-4 flex items-center rounded-md px-3">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -66,7 +71,7 @@ export function DocumentList({
       </div>
 
       {!ready ? (
-        <div className="glass h-40 animate-pulse rounded-3xl" />
+        <div className="glass h-40 animate-pulse rounded-lg" />
       ) : rows.length === 0 ? (
         <EmptyState
           title="Noch leer"
@@ -92,7 +97,7 @@ export function DocumentList({
             const totals = documentTotals(doc);
             return (
               <li key={doc.id}>
-                <div className="glass flex items-center gap-4 rounded-3xl px-4 py-3.5 transition hover:bg-white/[0.06]">
+                <div className="glass flex items-center gap-4 rounded-lg px-4 py-3 transition hover:bg-white/[0.04]">
                   <Link href={`${kindHref(doc.kind)}/${doc.id}`} className="flex min-w-0 flex-1 items-center gap-4">
                     <EntityMark name={doc.customerName || kindLabel(doc.kind)} size="sm" />
                     <div className="min-w-0 flex-1">

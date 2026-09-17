@@ -1,10 +1,8 @@
 export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
-  const box = size === "sm" ? "h-7 w-7 text-[11px]" : "h-8 w-8 text-xs";
+  const box = size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-[11px]";
 
   return (
-    <span
-      className={`flex ${box} items-center justify-center rounded-xl bg-accent font-medium text-accent-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]`}
-    >
+    <span className={`flex ${box} items-center justify-center rounded-md bg-white font-semibold text-black`}>
       C
     </span>
   );

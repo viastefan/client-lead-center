@@ -1,4 +1,4 @@
-export const DOCUMENT_KINDS = ["quote", "invoice"] as const;
+export const DOCUMENT_KINDS = ["quote", "invoice", "contract"] as const;
 export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
 
 export const DOCUMENT_STATUSES = [
@@ -9,6 +9,10 @@ export const DOCUMENT_STATUSES = [
   "invoiced",
   "paid",
   "overdue",
+  "signed",
+  "active",
+  "expired",
+  "cancelled",
   "archived",
 ] as const;
 export type DocumentStatus = (typeof DOCUMENT_STATUSES)[number];
@@ -46,8 +50,10 @@ export type CompanyProfile = {
   paymentDays: number;
   quotePrefix: string;
   invoicePrefix: string;
+  contractPrefix: string;
   quoteNote: string;
   invoiceNote: string;
+  contractNote: string;
   footer: string;
   defaultTemplate: TemplateId;
   defaultUnit: string;
@@ -55,6 +61,25 @@ export type CompanyProfile = {
   skontoDays: number;
   quoteEmailSubject: string;
   invoiceEmailSubject: string;
+  contractEmailSubject: string;
+  paypalUrl: string;
+  stripePaymentUrl: string;
+  paymentNote: string;
+};
+
+export type ReminderStatus = "open" | "done" | "snoozed";
+export type ReminderSource = "manual" | "quote" | "invoice" | "contract" | "lead";
+
+export type Reminder = {
+  id: string;
+  title: string;
+  note: string;
+  dueDate: string;
+  status: ReminderStatus;
+  source: ReminderSource;
+  relatedId: string | null;
+  customerName: string;
+  createdAt: string;
 };
 
 export type BusinessDocument = {
@@ -75,6 +100,7 @@ export type BusinessDocument = {
   taxRate: number;
   currency: "EUR";
   items: LineItem[];
+  paymentToken: string;
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
@@ -85,8 +111,10 @@ export type BillingState = {
   version: 1;
   company: CompanyProfile;
   documents: BusinessDocument[];
+  reminders: Reminder[];
   sequences: {
     quote: number;
     invoice: number;
+    contract: number;
   };
 };

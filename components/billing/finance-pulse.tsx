@@ -12,6 +12,7 @@ export function FinancePulse() {
 
   const quotes = documents.filter((doc) => doc.kind === "quote" && !doc.archivedAt);
   const invoices = documents.filter((doc) => doc.kind === "invoice" && !doc.archivedAt);
+  const contracts = documents.filter((doc) => doc.kind === "contract" && !doc.archivedAt);
   const openQuotes = quotes
     .filter((doc) => doc.status === "sent" || doc.status === "draft")
     .reduce((sum, doc) => sum + documentTotals(doc).gross, 0);
@@ -30,10 +31,11 @@ export function FinancePulse() {
           Zur Buchhaltung
         </Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Offene Angebote" value={formatMoney(openQuotes)} hint={`${quotes.length} aktiv`} />
         <StatCard label="Offene Rechnungen" value={formatMoney(openInvoices)} hint="Noch nicht bezahlt" />
         <StatCard label="Bezahlt" value={formatMoney(paid)} hint="Markiert als bezahlt" />
+        <StatCard label="Verträge" value={String(contracts.length)} hint="Laufend" />
       </div>
     </div>
   );

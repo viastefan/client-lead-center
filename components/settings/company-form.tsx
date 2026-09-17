@@ -11,16 +11,18 @@ export function CompanySettingsForm() {
   const [form, setForm] = useState<CompanyProfile | null>(null);
   const [nextQuote, setNextQuote] = useState<number | null>(null);
   const [nextInvoice, setNextInvoice] = useState<number | null>(null);
+  const [nextContract, setNextContract] = useState<number | null>(null);
   const [saved, setSaved] = useState(false);
   const working = form ?? company;
   const quoteSeq = nextQuote ?? sequences.quote + 1;
   const invoiceSeq = nextInvoice ?? sequences.invoice + 1;
+  const contractSeq = nextContract ?? sequences.contract + 1;
 
   function patch<K extends keyof CompanyProfile>(key: K, value: CompanyProfile[K]) {
     setForm({ ...working, [key]: value });
   }
 
-  if (!ready) return <div className="glass h-40 animate-pulse rounded-3xl" />;
+  if (!ready) return <div className="glass h-40 animate-pulse rounded-lg" />;
 
   return (
     <form
@@ -31,6 +33,7 @@ export function CompanySettingsForm() {
         saveSequences({
           quote: Math.max(0, Math.floor(quoteSeq) - 1),
           invoice: Math.max(0, Math.floor(invoiceSeq) - 1),
+          contract: Math.max(0, Math.floor(contractSeq) - 1),
         });
         setSaved(true);
         window.setTimeout(() => setSaved(false), 1400);
@@ -112,6 +115,21 @@ export function CompanySettingsForm() {
             value={working.invoicePrefix}
             onChange={(value) => patch("invoicePrefix", value)}
           />
+          <Field
+            label="Vertrags-Präfix"
+            value={working.contractPrefix}
+            onChange={(value) => patch("contractPrefix", value)}
+          />
+          <label className="block">
+            <span className="mb-1.5 block text-xs text-subtle">Nächste Vertragsnummer</span>
+            <input
+              className="field"
+              type="number"
+              min="1"
+              value={contractSeq}
+              onChange={(event) => setNextContract(Number(event.target.value))}
+            />
+          </label>
           <label className="block">
             <span className="mb-1.5 block text-xs text-subtle">Nächste Angebotsnummer</span>
             <input
@@ -160,6 +178,15 @@ export function CompanySettingsForm() {
           />
         </label>
         <label className="mt-3 block">
+          <span className="mb-1.5 block text-xs text-subtle">Vertragstext</span>
+          <textarea
+            className="field h-auto py-2"
+            rows={3}
+            value={working.contractNote}
+            onChange={(event) => patch("contractNote", event.target.value)}
+          />
+        </label>
+        <label className="mt-3 block">
           <span className="mb-1.5 block text-xs text-subtle">Fußzeile</span>
           <textarea
             className="field h-auto py-2"
@@ -179,8 +206,37 @@ export function CompanySettingsForm() {
             value={working.invoiceEmailSubject}
             onChange={(value) => patch("invoiceEmailSubject", value)}
           />
+          <Field
+            label="E-Mail-Betreff Vertrag"
+            value={working.contractEmailSubject}
+            onChange={(value) => patch("contractEmailSubject", value)}
+          />
         </div>
         <p className="mt-2 text-xs text-subtle">Platzhalter: {"{number}"} und {"{company}"}.</p>
+      </Panel>
+
+      <Panel title="Zahlungslinks" description="PayPal, Stripe und Hinweis auf der öffentlichen Zahlungsseite.">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field
+            label="PayPal-Link (paypal.me/...)"
+            value={working.paypalUrl}
+            onChange={(value) => patch("paypalUrl", value)}
+          />
+          <Field
+            label="Stripe Payment Link"
+            value={working.stripePaymentUrl}
+            onChange={(value) => patch("stripePaymentUrl", value)}
+          />
+        </div>
+        <label className="mt-3 block">
+          <span className="mb-1.5 block text-xs text-subtle">Zahlungshinweis</span>
+          <textarea
+            className="field h-auto py-2"
+            rows={2}
+            value={working.paymentNote}
+            onChange={(event) => patch("paymentNote", event.target.value)}
+          />
+        </label>
       </Panel>
 
       <Panel title="Designvorlagen" description="Atelier, Linear oder Noir. Die Wahl gilt für neue Dokumente.">

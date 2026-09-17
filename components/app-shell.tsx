@@ -9,9 +9,11 @@ import {
   FileText,
   Inbox,
   LayoutGrid,
+  Mail,
   Menu,
   Plug,
   Receipt,
+  ScrollText,
   Search,
   Settings,
   Users,
@@ -26,15 +28,18 @@ const PRIMARY = [
   { href: "/", label: "Übersicht", icon: LayoutGrid },
   { href: "/clients", label: "Kunden", icon: Users },
   { href: "/leads", label: "Leads", icon: Inbox },
+  { href: "/reminders", label: "Erinnerungen", icon: Bell },
 ];
 
 const FINANCE = [
   { href: "/quotes", label: "Angebote", icon: FileText },
   { href: "/invoices", label: "Rechnungen", icon: Receipt },
+  { href: "/contracts", label: "Verträge", icon: ScrollText },
   { href: "/archive", label: "Archiv", icon: Archive },
 ];
 
 const SYSTEM = [
+  { href: "/emails", label: "E-Mail", icon: Mail },
   { href: "/websites", label: "Websites", icon: Globe },
   { href: "/integrations", label: "Verbindungen", icon: Plug },
   { href: "/settings", label: "Einstellungen", icon: Settings },
@@ -64,13 +69,11 @@ function NavList({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className={`flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-[13px] tracking-[-0.01em] transition ${
-              active
-                ? "bg-white/[0.09] font-medium text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-                : "text-muted hover:bg-white/[0.045] hover:text-foreground"
+            className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition ${
+              active ? "bg-white/10 font-medium text-foreground" : "text-muted hover:bg-white/5 hover:text-foreground"
             }`}
           >
-            <Icon size={15} strokeWidth={1.5} />
+            <Icon size={14} strokeWidth={1.75} />
             {item.label}
           </Link>
         );
@@ -93,27 +96,27 @@ export function AppShell({
   const initial = (user.profile?.full_name || user.email || "A").slice(0, 1).toUpperCase();
 
   return (
-    <div className="min-h-full lg:grid lg:grid-cols-[220px_1fr]">
+    <div className="min-h-full lg:grid lg:grid-cols-[232px_1fr]">
       {open ? (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-black/45 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
           aria-label="Navigation schließen"
           onClick={() => setOpen(false)}
         />
       ) : null}
 
       <aside
-        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-[220px] flex-col rounded-none border-y-0 border-l-0 px-3 py-5 transition-transform lg:static lg:translate-x-0 ${
+        className={`glass-strong fixed inset-y-0 left-0 z-40 flex w-[232px] flex-col rounded-none border-y-0 border-l-0 border-r border-border px-3 py-4 transition-transform lg:static lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <BrandMark size="sm" />
             <div>
-              <p className="text-[13px] font-medium tracking-tight">Lead Center</p>
-              <p className="text-[11px] text-subtle">{preview ? "Studio" : "Operations"}</p>
+              <p className="text-[13px] font-medium">Lead Center</p>
+              <p className="text-[11px] text-subtle">{preview ? "Preview" : "Production"}</p>
             </div>
           </div>
           <button type="button" className="lg:hidden" onClick={() => setOpen(false)} aria-label="Schließen">
@@ -121,73 +124,63 @@ export function AppShell({
           </button>
         </div>
 
-        <div className="mt-7 flex-1 space-y-6 overflow-y-auto px-0.5">
+        <div className="mt-6 flex-1 space-y-6 overflow-y-auto px-0.5">
           <NavList items={PRIMARY} pathname={pathname} onNavigate={() => setOpen(false)} />
           <div>
-            <p className="kicker mb-2 px-2.5">Finanzen</p>
+            <p className="kicker mb-2 px-2">Finanzen</p>
             <NavList items={FINANCE} pathname={pathname} onNavigate={() => setOpen(false)} />
           </div>
           <div>
-            <p className="kicker mb-2 px-2.5">System</p>
+            <p className="kicker mb-2 px-2">System</p>
             <NavList items={SYSTEM} pathname={pathname} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       </aside>
 
       <div className="min-w-0">
-        <header className="glass sticky top-0 z-20 flex h-14 items-center gap-3 rounded-none border-x-0 border-t-0 px-4 md:px-8">
+        <header className="sticky top-0 z-20 flex h-12 items-center gap-3 border-b border-border bg-black px-4 md:px-6">
           <button type="button" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Navigation öffnen">
             <Menu size={18} />
           </button>
-          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white/5 px-3">
-            <Search size={15} className="shrink-0 text-subtle" />
+          <form action="/leads" className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-[#0a0a0a] px-3">
+            <Search size={14} className="shrink-0 text-subtle" />
             <input
               name="q"
               placeholder="Suchen"
-              className="h-9 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-subtle"
+              className="h-8 w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-subtle"
             />
           </form>
-          <Link href="/quotes/new" className="btn-ghost hidden h-9 sm:inline-flex">
+          <Link href="/quotes/new" className="btn-ghost hidden sm:inline-flex">
             Angebot
           </Link>
-          <Link href="/invoices/new" className="btn-ghost hidden h-9 md:inline-flex">
+          <Link href="/invoices/new" className="btn-ghost hidden md:inline-flex">
             Rechnung
           </Link>
-          <Link
-            href="/leads?status=new"
-            className="relative rounded-xl p-2 text-muted transition hover:bg-white/10 hover:text-foreground"
-            aria-label="Neue Leads"
-          >
-            <Bell size={16} />
+          <Link href="/contracts/new" className="btn-ghost hidden lg:inline-flex">
+            Vertrag
+          </Link>
+          <Link href="/reminders" className="rounded-md p-2 text-muted transition hover:bg-white/10 hover:text-foreground" aria-label="Erinnerungen">
+            <Bell size={15} />
           </Link>
           {preview ? (
-            <div className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-xs text-muted">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground ring-1 ring-border">
+            <div className="flex items-center gap-2 px-1 text-xs text-muted">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground">
                 {initial}
               </span>
-              <span className="hidden sm:block">
-                <span className="block max-w-[140px] truncate text-foreground">{user.email}</span>
-                <span className="text-subtle">Lokal gespeichert</span>
-              </span>
+              <span className="hidden max-w-[140px] truncate sm:block">{user.email}</span>
             </div>
           ) : (
             <form action="/logout" method="post">
-              <button
-                type="submit"
-                className="flex items-center gap-2 rounded-xl px-1.5 py-1 text-left text-xs text-muted transition hover:bg-white/10"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground ring-1 ring-border">
+              <button type="submit" className="flex items-center gap-2 px-1 text-xs text-muted">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[11px] font-medium text-foreground">
                   {initial}
                 </span>
-                <span className="hidden sm:block">
-                  <span className="block max-w-[140px] truncate text-foreground">{user.email}</span>
-                  <span className="text-subtle">Abmelden</span>
-                </span>
+                <span className="hidden sm:block">Abmelden</span>
               </button>
             </form>
           )}
         </header>
-        <main className="mx-auto w-full max-w-[1180px] px-4 py-8 md:px-8">
+        <main className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6">
           {preview ? <PreviewBanner /> : null}
           {children}
         </main>

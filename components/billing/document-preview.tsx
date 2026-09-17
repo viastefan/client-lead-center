@@ -50,7 +50,7 @@ export function DocumentPreview({
             <strong>{formatLongDate(doc.issueDate)}</strong>
           </div>
           <div>
-            <span>{doc.kind === "quote" ? "Gültig bis" : "Fällig am"}</span>
+            <span>{doc.kind === "quote" ? "Gültig bis" : doc.kind === "contract" ? "Laufzeit bis" : "Fällig am"}</span>
             <strong>{formatLongDate(doc.dueDate)}</strong>
           </div>
           {company.vatId ? (
@@ -120,6 +120,7 @@ export function DocumentPreview({
       </section>
 
       {doc.notes ? <p className="sheet-notes">{doc.notes}</p> : null}
+      {doc.kind === "invoice" && company.paymentNote ? <p className="sheet-notes">{company.paymentNote}</p> : null}
 
       <footer className="sheet-foot">
         <div>

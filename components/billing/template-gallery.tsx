@@ -35,6 +35,7 @@ const SAMPLE: Omit<BusinessDocument, "templateId"> = {
   updatedAt: "2026-09-17T09:00:00.000Z",
   archivedAt: null,
   convertedFromId: null,
+  paymentToken: "paysample01",
 };
 
 export function TemplateGallery({

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const { user, supabase } = await requireApiUser();
     if (!isAdminRole(user.profile?.role)) {
-      throw new ApiError(401, "UNAUTHORIZED", "Admin access required.");
+      throw new ApiError(403, "FORBIDDEN", "Admin access required.");
     }
     const parsed = customerInputSchema.safeParse(await request.json());
     if (!parsed.success) {

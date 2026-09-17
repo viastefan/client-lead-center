@@ -11,7 +11,7 @@ import {
   submitLeadSnippet,
 } from "@/lib/integrations/snippets";
 import { isAdminRole, requireSessionUser } from "@/lib/auth/session";
-import { hasClaudeKey, hasGoogleOAuth, hasMicrosoftOAuth, hasResendKey, isSupabaseAdminConfigured } from "@/lib/env";
+import { hasClaudeKey, hasGoogleOAuth, hasIonosSmtp, hasMicrosoftOAuth, hasResendKey, isSupabaseAdminConfigured } from "@/lib/env";
 
 export const metadata = { title: "Verbindungen" };
 
@@ -45,6 +45,11 @@ export default async function IntegrationsPage() {
       note: "V1 vorbereitet",
     },
     {
+      name: "1&1 / IONOS SMTP",
+      status: hasIonosSmtp() ? ("operational" as const) : ("warning" as const),
+      note: "smtp.ionos.de:465",
+    },
+    {
       name: "Resend",
       status: hasResendKey() ? ("operational" as const) : ("warning" as const),
       note: "System-Mails",
@@ -69,7 +74,7 @@ export default async function IntegrationsPage() {
       />
 
       {migrationMissing ? (
-        <div className="mb-6 rounded-2xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-6">
+        <div className="mb-6 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-6">
           Die Connection-Migration fehlt noch. Bitte in Supabase SQL Editor ausführen:{" "}
           <code className="font-mono">supabase/migrations/20260915180000_website_connection.sql</code>
         </div>

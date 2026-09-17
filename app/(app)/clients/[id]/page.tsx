@@ -58,6 +58,9 @@ export default async function ClientDetailPage({
             <Link href={`/invoices/new?customer=${customer.id}`} className="btn-ghost">
               Rechnung
             </Link>
+            <Link href={`/contracts/new?customer=${customer.id}`} className="btn-ghost">
+              Vertrag
+            </Link>
             <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
               {customerStatusLabel(customer.status)}
             </StatusBadge>
@@ -95,7 +98,7 @@ export default async function ClientDetailPage({
 
       {tab === "overview" || tab === "documents" ? (
         <div className={tab === "overview" ? "mb-6" : ""}>
-          <Panel title="Angebote & Rechnungen" description="Dokumente zu diesem Kunden.">
+          <Panel title="Angebote, Rechnungen & Verträge" description="Dokumente zu diesem Kunden.">
             <DocumentList customerId={customer.id} />
           </Panel>
         </div>
@@ -136,7 +139,7 @@ export default async function ClientDetailPage({
       {tab === "email" ? (
         <Panel title="E-Mail-Verbindungen">
           {emails.length === 0 ? (
-            <p className="text-sm text-muted">Noch keine Mailbox verbunden. OAuth folgt in einer späteren Phase.</p>
+            <p className="text-sm text-muted">Noch keine Mailbox verbunden. IONOS SMTP liegt unter E-Mail.</p>
           ) : (
             <ul className="space-y-3">
               {emails.map((account) => (

@@ -17,7 +17,7 @@ export function RecentDocuments() {
   return (
     <Panel
       title="Dokumente"
-      description="Die letzten Angebote und Rechnungen."
+      description="Die letzten Angebote, Rechnungen und Verträge."
       action={
         <Link href="/quotes" className="text-sm text-muted hover:text-foreground">
           Alle

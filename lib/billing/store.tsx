@@ -3,18 +3,21 @@
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { formatDocumentNumber, isOverdueInvoice } from "./calc";
 import { emptyBillingState, newLineItem, STORAGE_KEY } from "./defaults";
+import { newPaymentToken } from "./payment";
 import type {
   BillingState,
   BusinessDocument,
   CompanyProfile,
   DocumentKind,
   DocumentStatus,
+  Reminder,
 } from "./types";
 
 type BillingContextValue = {
   ready: boolean;
   company: CompanyProfile;
   documents: BusinessDocument[];
+  reminders: Reminder[];
   sequences: BillingState["sequences"];
   saveCompany: (company: CompanyProfile) => void;
   saveSequences: (sequences: BillingState["sequences"]) => void;
@@ -24,7 +27,11 @@ type BillingContextValue = {
   setDocumentStatus: (id: string, status: DocumentStatus) => void;
   duplicateDocument: (id: string) => BusinessDocument | null;
   convertQuoteToInvoice: (id: string) => BusinessDocument | null;
+  convertQuoteToContract: (id: string) => BusinessDocument | null;
   blankDocument: (kind: DocumentKind) => BusinessDocument;
+  addReminder: (reminder: Omit<Reminder, "id" | "createdAt" | "status"> & { status?: Reminder["status"] }) => Reminder;
+  saveReminder: (reminder: Reminder) => void;
+  completeReminder: (id: string) => void;
 };
 
 const BillingContext = createContext<BillingContextValue | null>(null);
@@ -44,6 +51,24 @@ function withOverdue(doc: BusinessDocument, asOf = today()): BusinessDocument {
   return { ...doc, status: "overdue" };
 }
 
+function prefixFor(company: CompanyProfile, kind: DocumentKind): string {
+  if (kind === "quote") return company.quotePrefix;
+  if (kind === "invoice") return company.invoicePrefix;
+  return company.contractPrefix;
+}
+
+function introFor(kind: DocumentKind): string {
+  if (kind === "quote") return "Angebot für Ihre Anfrage.";
+  if (kind === "invoice") return "Rechnung für erbrachte Leistungen.";
+  return "Vertrag über die vereinbarten Leistungen.";
+}
+
+function noteFor(company: CompanyProfile, kind: DocumentKind): string {
+  if (kind === "quote") return company.quoteNote;
+  if (kind === "invoice") return company.invoiceNote;
+  return company.contractNote;
+}
+
 function readState(): BillingState {
   const fallback = emptyBillingState();
   if (typeof window === "undefined") return fallback;
@@ -59,7 +84,13 @@ function readState(): BillingState {
       ...parsed,
       company: { ...fallback.company, ...parsed.company },
       sequences: { ...fallback.sequences, ...parsed.sequences },
-      documents: parsed.documents.map((doc) => withOverdue(doc)),
+      reminders: Array.isArray(parsed.reminders) ? parsed.reminders : fallback.reminders,
+      documents: parsed.documents.map((doc) =>
+        withOverdue({
+          ...doc,
+          paymentToken: doc.paymentToken || newPaymentToken(),
+        }),
+      ),
     };
   } catch {
     return fallback;
@@ -72,6 +103,15 @@ function writeState(state: BillingState) {
 
 function subscribeHydration() {
   return () => undefined;
+}
+
+function bumpSequence(prev: BillingState, kind: DocumentKind) {
+  const sequence = (prev.sequences[kind] ?? 0) + 1;
+  return {
+    sequence,
+    prefix: prefixFor(prev.company, kind),
+    sequences: { ...prev.sequences, [kind]: sequence },
+  };
 }
 
 export function BillingProvider({ children }: { children: React.ReactNode }) {
@@ -108,18 +148,15 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         let nextSequences = prev.sequences;
         let number = doc.number;
         if (!number) {
-          const sequence = (doc.kind === "quote" ? prev.sequences.quote : prev.sequences.invoice) + 1;
-          const prefix = doc.kind === "quote" ? prev.company.quotePrefix : prev.company.invoicePrefix;
+          const bumped = bumpSequence(prev, doc.kind);
           const year = new Date(doc.issueDate || Date.now()).getFullYear();
-          number = formatDocumentNumber(prefix, year, sequence);
-          nextSequences = {
-            quote: doc.kind === "quote" ? sequence : prev.sequences.quote,
-            invoice: doc.kind === "invoice" ? sequence : prev.sequences.invoice,
-          };
+          number = formatDocumentNumber(bumped.prefix, year, bumped.sequence);
+          nextSequences = bumped.sequences;
         }
         saved = withOverdue({
           ...doc,
           number,
+          paymentToken: doc.paymentToken || newPaymentToken(),
           updatedAt: new Date().toISOString(),
         });
         return {
@@ -150,12 +187,13 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         customerEmail: "",
         customerAddress: "",
         issueDate,
-        dueDate: addDays(issueDate, state.company.paymentDays),
-        intro: kind === "quote" ? "Angebot für Ihre Anfrage." : "Rechnung für erbrachte Leistungen.",
-        notes: kind === "quote" ? state.company.quoteNote : state.company.invoiceNote,
+        dueDate: addDays(issueDate, kind === "contract" ? 365 : state.company.paymentDays),
+        intro: introFor(kind),
+        notes: noteFor(state.company, kind),
         taxRate: state.company.taxRate,
         currency: "EUR",
         items: [newLineItem(state.company.defaultUnit)],
+        paymentToken: newPaymentToken(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         archivedAt: null,
@@ -185,12 +223,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         ...prev,
         documents: prev.documents.map((item) =>
           item.id === id
-            ? {
-                ...item,
-                archivedAt: null,
-                status: item.kind === "invoice" ? "draft" : "draft",
-                updatedAt: new Date().toISOString(),
-              }
+            ? { ...item, archivedAt: null, status: "draft", updatedAt: new Date().toISOString() }
             : item,
         ),
       }));
@@ -223,8 +256,9 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           number: "",
           status: "draft",
           issueDate,
-          dueDate: addDays(issueDate, prev.company.paymentDays),
+          dueDate: addDays(issueDate, source.kind === "contract" ? 365 : prev.company.paymentDays),
           items: source.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+          paymentToken: newPaymentToken(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           archivedAt: null,
@@ -243,19 +277,20 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       persist((prev) => {
         const quote = prev.documents.find((item) => item.id === id && item.kind === "quote");
         if (!quote) return prev;
+        const bumped = bumpSequence(prev, "invoice");
         const year = new Date().getFullYear();
-        const sequence = prev.sequences.invoice + 1;
         const issueDate = today();
         invoice = {
           ...quote,
           id: crypto.randomUUID(),
           kind: "invoice",
-          number: formatDocumentNumber(prev.company.invoicePrefix, year, sequence),
+          number: formatDocumentNumber(bumped.prefix, year, bumped.sequence),
           status: "draft",
           issueDate,
           dueDate: addDays(issueDate, prev.company.paymentDays),
           intro: "Rechnung zu Ihrem angenommenen Angebot.",
           notes: prev.company.invoiceNote,
+          paymentToken: newPaymentToken(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           archivedAt: null,
@@ -263,7 +298,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         };
         return {
           ...prev,
-          sequences: { ...prev.sequences, invoice: sequence },
+          sequences: bumped.sequences,
           documents: [
             invoice,
             ...prev.documents.map((item) =>
@@ -279,11 +314,110 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     [persist],
   );
 
+  const convertQuoteToContract = useCallback(
+    (id: string): BusinessDocument | null => {
+      let contract: BusinessDocument | null = null;
+      persist((prev) => {
+        const quote = prev.documents.find((item) => item.id === id && item.kind === "quote");
+        if (!quote) return prev;
+        const bumped = bumpSequence(prev, "contract");
+        const year = new Date().getFullYear();
+        const issueDate = today();
+        contract = {
+          ...quote,
+          id: crypto.randomUUID(),
+          kind: "contract",
+          number: formatDocumentNumber(bumped.prefix, year, bumped.sequence),
+          status: "draft",
+          issueDate,
+          dueDate: addDays(issueDate, 365),
+          intro: "Vertrag zu Ihrem angenommenen Angebot.",
+          notes: prev.company.contractNote,
+          paymentToken: newPaymentToken(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          archivedAt: null,
+          convertedFromId: quote.id,
+        };
+        return {
+          ...prev,
+          sequences: bumped.sequences,
+          documents: [contract, ...prev.documents],
+        };
+      });
+      return contract;
+    },
+    [persist],
+  );
+
+  const addReminder = useCallback(
+    (input: Omit<Reminder, "id" | "createdAt" | "status"> & { status?: Reminder["status"] }) => {
+      const reminder: Reminder = {
+        ...input,
+        id: crypto.randomUUID(),
+        status: input.status ?? "open",
+        createdAt: new Date().toISOString(),
+      };
+      persist((prev) => ({ ...prev, reminders: [reminder, ...prev.reminders] }));
+      return reminder;
+    },
+    [persist],
+  );
+
+  const saveReminder = useCallback(
+    (reminder: Reminder) => {
+      persist((prev) => ({
+        ...prev,
+        reminders: prev.reminders.some((item) => item.id === reminder.id)
+          ? prev.reminders.map((item) => (item.id === reminder.id ? reminder : item))
+          : [reminder, ...prev.reminders],
+      }));
+    },
+    [persist],
+  );
+
+  const completeReminder = useCallback(
+    (id: string) => {
+      persist((prev) => {
+        if (prev.reminders.some((item) => item.id === id)) {
+          return {
+            ...prev,
+            reminders: prev.reminders.map((item) => (item.id === id ? { ...item, status: "done" as const } : item)),
+          };
+        }
+        const match = /^derived-(quote|invoice|contract)-(.+)$/.exec(id);
+        if (!match) return prev;
+        const source = match[1] as Reminder["source"];
+        const relatedId = match[2];
+        const related = prev.documents.find((item) => item.id === relatedId);
+        return {
+          ...prev,
+          reminders: [
+            {
+              id: crypto.randomUUID(),
+              title: related ? `${related.number} erledigt` : "Erinnerung erledigt",
+              note: "",
+              dueDate: today(),
+              status: "done",
+              source,
+              relatedId,
+              customerName: related?.customerName ?? "",
+              createdAt: new Date().toISOString(),
+            },
+            ...prev.reminders,
+          ],
+        };
+      });
+    },
+    [persist],
+  );
+
   const value = useMemo<BillingContextValue>(
     () => ({
       ready,
       company: state.company,
       documents: state.documents,
+      reminders: state.reminders,
       sequences: state.sequences,
       saveCompany,
       saveSequences,
@@ -293,21 +427,30 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       setDocumentStatus,
       duplicateDocument,
       convertQuoteToInvoice,
+      convertQuoteToContract,
       blankDocument,
+      addReminder,
+      saveReminder,
+      completeReminder,
     }),
     [
+      addReminder,
       archiveDocument,
       blankDocument,
       commitDocument,
+      completeReminder,
+      convertQuoteToContract,
       convertQuoteToInvoice,
       duplicateDocument,
       ready,
       restoreDocument,
       saveCompany,
+      saveReminder,
       saveSequences,
       setDocumentStatus,
       state.company,
       state.documents,
+      state.reminders,
       state.sequences,
     ],
   );

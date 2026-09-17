@@ -3,12 +3,22 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Copy, Plus, Printer, Trash2 } from "lucide-react";
+import { Copy, Link2, Plus, Printer, Send, Trash2 } from "lucide-react";
 import { DocumentPreview } from "@/components/billing/document-preview";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { documentTotals } from "@/lib/billing/calc";
 import { formatMoney, interpolateTemplate } from "@/lib/billing/format";
-import { INVOICE_STATUSES, QUOTE_STATUSES, TEMPLATE_META, kindHref, kindLabel, statusLabel } from "@/lib/billing/labels";
+import {
+  CONTRACT_STATUSES,
+  INVOICE_STATUSES,
+  QUOTE_STATUSES,
+  TEMPLATE_META,
+  dateFieldLabel,
+  kindHref,
+  kindLabel,
+  statusLabel,
+} from "@/lib/billing/labels";
+import { paymentSnapshotFor, paymentUrl } from "@/lib/billing/payment";
 import { newLineItem } from "@/lib/billing/defaults";
 import { useBilling } from "@/lib/billing/store";
 import type { BusinessDocument, DocumentKind, DocumentStatus, LineItem, TemplateId } from "@/lib/billing/types";
@@ -41,7 +51,7 @@ export function DocumentEditor({
   const { ready, documents, blankDocument } = useBilling();
 
   if (!ready) {
-    return <div className="glass h-72 animate-pulse rounded-3xl" />;
+    return <div className="glass h-72 animate-pulse rounded-lg" />;
   }
 
   if (id) {
@@ -79,13 +89,15 @@ function DocumentEditorForm({
 }) {
   const id = persistedId;
   const router = useRouter();
-  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, duplicateDocument } = useBilling();
+  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, convertQuoteToContract, duplicateDocument } =
+    useBilling();
   const [working, setWorking] = useState(initial);
   const [savedFlash, setSavedFlash] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mailFlash, setMailFlash] = useState("");
   const customers = demoCustomers();
   const totals = documentTotals(working);
-  const statuses = kind === "quote" ? QUOTE_STATUSES : INVOICE_STATUSES;
+  const statuses = kind === "quote" ? QUOTE_STATUSES : kind === "invoice" ? INVOICE_STATUSES : CONTRACT_STATUSES;
   const title = useMemo(() => {
     return working.number ? `${kindLabel(kind)} ${working.number}` : `Neues ${kindLabel(kind)}`;
   }, [kind, working.number]);
@@ -115,27 +127,79 @@ function DocumentEditorForm({
     window.print();
   }
 
-  async function copyMail() {
-    const subject = interpolateTemplate(
-      kind === "quote" ? company.quoteEmailSubject : company.invoiceEmailSubject,
-      {
-        number: working.number || "Entwurf",
-        company: working.customerName || company.legalName,
-      },
-    );
+  function mailCopy(doc = working) {
+    const origin = window.location.origin;
+    const snapshot = paymentSnapshotFor(doc, company);
+    const pay = kind === "invoice" ? paymentUrl(origin, snapshot) : "";
+    const subjectKey =
+      kind === "quote"
+        ? company.quoteEmailSubject
+        : kind === "invoice"
+          ? company.invoiceEmailSubject
+          : company.contractEmailSubject;
+    const subject = interpolateTemplate(subjectKey, {
+      number: working.number || "Entwurf",
+      company: working.customerName || company.legalName,
+    });
+    const noun = kind === "quote" ? "unser Angebot" : kind === "invoice" ? "unsere Rechnung" : "unseren Vertrag";
     const greeting = working.customerContact ? `Guten Tag ${working.customerContact},` : "Guten Tag,";
     const body = [
       greeting,
       "",
-      `anbei ${kind === "quote" ? "unser Angebot" : "unsere Rechnung"} ${working.number || ""}.`.trim(),
+      `anbei ${noun} ${working.number || ""}.`.trim(),
       `Gesamtbetrag: ${formatMoney(totals.gross, working.currency)}.`,
+      pay ? `Zahlungslink: ${pay}` : "",
       "",
       company.footer,
       "",
       company.legalName,
       company.ownerName,
-    ].join("\n");
+    ]
+      .filter((line) => line !== "")
+      .join("\n");
+    return { subject, body, pay };
+  }
+
+  async function copyMail() {
+    const { subject, body } = mailCopy();
     await navigator.clipboard.writeText(`${subject}\n\n${body}`);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  async function sendMail() {
+    if (!working.customerEmail) {
+      setMailFlash("Kunde ohne E-Mail");
+      window.setTimeout(() => setMailFlash(""), 1600);
+      return;
+    }
+    const saved = commitDocument(working);
+    setWorking(saved);
+    const { subject, body } = mailCopy(saved);
+    const password = window.sessionStorage.getItem("clc.mail.pass") ?? "";
+    const username = window.localStorage.getItem("clc.mailbox.user") ?? "";
+    const host = window.localStorage.getItem("clc.mailbox.host") ?? "";
+    const response = await fetch("/api/mail", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        to: saved.customerEmail,
+        subject,
+        text: body,
+        host: host || undefined,
+        username: username || undefined,
+        password: password || undefined,
+      }),
+    });
+    const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
+    setMailFlash(payload.success ? "Gesendet" : payload.error?.message || "Fehler");
+    window.setTimeout(() => setMailFlash(""), 2200);
+  }
+
+  async function copyPaymentLink() {
+    const origin = window.location.origin;
+    const snapshot = paymentSnapshotFor(working, company);
+    await navigator.clipboard.writeText(paymentUrl(origin, snapshot));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   }
@@ -148,16 +212,28 @@ function DocumentEditorForm({
         action={
           <div className="flex flex-wrap gap-2">
             {kind === "quote" && id ? (
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => {
-                  const invoice = convertQuoteToInvoice(working.id);
-                  if (invoice) router.push(`/invoices/${invoice.id}`);
-                }}
-              >
-                Als Rechnung
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    const invoice = convertQuoteToInvoice(working.id);
+                    if (invoice) router.push(`/invoices/${invoice.id}`);
+                  }}
+                >
+                  Als Rechnung
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => {
+                    const contract = convertQuoteToContract(working.id);
+                    if (contract) router.push(`/contracts/${contract.id}`);
+                  }}
+                >
+                  Als Vertrag
+                </button>
+              </>
             ) : null}
             {id ? (
               <button
@@ -183,9 +259,19 @@ function DocumentEditorForm({
                 Archivieren
               </button>
             ) : null}
+            {kind === "invoice" ? (
+              <button type="button" className="btn-ghost" onClick={() => void copyPaymentLink()}>
+                <Link2 size={14} />
+                Zahlungslink
+              </button>
+            ) : null}
             <button type="button" className="btn-ghost" onClick={() => void copyMail()}>
               <Copy size={14} />
               {copied ? "Kopiert" : "E-Mail"}
+            </button>
+            <button type="button" className="btn-ghost" onClick={() => void sendMail()}>
+              <Send size={14} />
+              {mailFlash || "Senden"}
             </button>
             <button type="button" className="btn-ghost" onClick={printDoc}>
               <Printer size={14} />
@@ -200,7 +286,7 @@ function DocumentEditorForm({
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         <form
-          className="glass space-y-5 rounded-[28px] p-5"
+          className="glass space-y-5 rounded-lg p-5"
           onSubmit={(event) => {
             event.preventDefault();
             save();
@@ -246,7 +332,7 @@ function DocumentEditorForm({
               />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs text-subtle">{kind === "quote" ? "Gültig bis" : "Fällig"}</span>
+              <span className="mb-1.5 block text-xs text-subtle">{dateFieldLabel(kind)}</span>
               <input
                 type="date"
                 className="field"
@@ -274,7 +360,7 @@ function DocumentEditorForm({
                   key={templateId}
                   type="button"
                   onClick={() => patch({ templateId })}
-                  className={`rounded-2xl border px-3 py-2 text-left transition ${
+                  className={`rounded-md border px-3 py-2 text-left transition ${
                     working.templateId === templateId
                       ? "border-white/25 bg-white/10"
                       : "border-border bg-white/[0.04] hover:bg-white/[0.08]"
@@ -310,7 +396,7 @@ function DocumentEditorForm({
               </button>
             </div>
             {working.items.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-border bg-white/[0.04] p-3">
+              <div key={item.id} className="rounded-md border border-border bg-white/[0.04] p-3">
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                   <input
                     className="field h-10"
@@ -386,7 +472,7 @@ function DocumentEditorForm({
                 onChange={(event) => patch({ taxRate: Number(event.target.value) })}
               />
             </label>
-            <div className="flex items-end justify-between rounded-2xl border border-border px-4 py-3">
+            <div className="flex items-end justify-between rounded-md border border-border px-4 py-3">
               <span className="text-xs text-subtle">Gesamt</span>
               <strong className="text-lg tabular-nums">{formatMoney(totals.gross, working.currency)}</strong>
             </div>

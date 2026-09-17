@@ -56,6 +56,25 @@ export function hasMicrosoftOAuth(): boolean {
   return Boolean(read("MICROSOFT_CLIENT_ID") && read("MICROSOFT_CLIENT_SECRET"));
 }
 
+export function hasIonosSmtp(): boolean {
+  return Boolean(read("IONOS_SMTP_USER") && read("IONOS_SMTP_PASSWORD"));
+}
+
+export function getIonosSmtp():
+  | { host: string; port: number; username: string; password: string; fromName?: string }
+  | undefined {
+  const username = read("IONOS_SMTP_USER");
+  const password = read("IONOS_SMTP_PASSWORD");
+  if (!username || !password) return undefined;
+  return {
+    host: read("IONOS_SMTP_HOST") ?? "smtp.ionos.de",
+    port: Number(read("IONOS_SMTP_PORT") ?? "465") || 465,
+    username,
+    password,
+    fromName: read("IONOS_SMTP_FROM_NAME"),
+  };
+}
+
 export function requireSupabasePublicEnv(): { url: string; key: string } {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();

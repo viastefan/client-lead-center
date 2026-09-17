@@ -1,6 +1,7 @@
 export type ApiErrorCode =
   | "BAD_REQUEST"
   | "UNAUTHORIZED"
+  | "FORBIDDEN"
   | "NOT_FOUND"
   | "RATE_LIMITED"
   | "PAYLOAD_TOO_LARGE"

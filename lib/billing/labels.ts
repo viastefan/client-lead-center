@@ -1,11 +1,15 @@
 import type { DocumentKind, DocumentStatus, TemplateId } from "./types";
 
 export function kindLabel(kind: DocumentKind): string {
-  return kind === "quote" ? "Angebot" : "Rechnung";
+  if (kind === "quote") return "Angebot";
+  if (kind === "invoice") return "Rechnung";
+  return "Vertrag";
 }
 
-export function kindHref(kind: DocumentKind): "/quotes" | "/invoices" {
-  return kind === "quote" ? "/quotes" : "/invoices";
+export function kindHref(kind: DocumentKind): "/quotes" | "/invoices" | "/contracts" {
+  if (kind === "quote") return "/quotes";
+  if (kind === "invoice") return "/invoices";
+  return "/contracts";
 }
 
 export function statusLabel(status: DocumentStatus): string {
@@ -24,6 +28,14 @@ export function statusLabel(status: DocumentStatus): string {
       return "Bezahlt";
     case "overdue":
       return "Überfällig";
+    case "signed":
+      return "Unterzeichnet";
+    case "active":
+      return "Aktiv";
+    case "expired":
+      return "Beendet";
+    case "cancelled":
+      return "Storniert";
     case "archived":
       return "Archiv";
     default:
@@ -32,8 +44,8 @@ export function statusLabel(status: DocumentStatus): string {
 }
 
 export function statusTone(status: DocumentStatus): "neutral" | "success" | "warning" | "danger" {
-  if (status === "paid" || status === "accepted") return "success";
-  if (status === "overdue" || status === "declined") return "danger";
+  if (status === "paid" || status === "accepted" || status === "signed" || status === "active") return "success";
+  if (status === "overdue" || status === "declined" || status === "expired" || status === "cancelled") return "danger";
   if (status === "sent" || status === "invoiced") return "warning";
   return "neutral";
 }
@@ -46,3 +58,10 @@ export const TEMPLATE_META: Record<TemplateId, { name: string; note: string }> =
 
 export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "invoiced"] as const;
 export const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue"] as const;
+export const CONTRACT_STATUSES = ["draft", "sent", "signed", "active", "expired", "cancelled"] as const;
+
+export function dateFieldLabel(kind: DocumentKind): string {
+  if (kind === "quote") return "Gültig bis";
+  if (kind === "invoice") return "Fällig";
+  return "Laufzeit bis";
+}

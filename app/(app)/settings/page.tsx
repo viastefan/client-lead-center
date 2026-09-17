@@ -2,9 +2,11 @@ import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { CompanySettingsForm } from "@/components/settings/company-form";
 import { requireSessionUser } from "@/lib/auth/session";
 import { isPreviewMode } from "@/lib/data/workspace";
+import { MailboxForm } from "@/components/settings/mailbox-form";
 import {
   hasClaudeKey,
   hasGoogleOAuth,
+  hasIonosSmtp,
   hasMicrosoftOAuth,
   hasResendKey,
   isSupabaseAdminConfigured,
@@ -21,6 +23,7 @@ export default async function SettingsPage() {
     { label: "Supabase URL + Anon Key", ok: isSupabaseConfigured() },
     { label: "Service Role Key", ok: isSupabaseAdminConfigured() },
     { label: "Resend", ok: hasResendKey() },
+    { label: "1&1 / IONOS SMTP", ok: hasIonosSmtp() },
     { label: "Gmail OAuth", ok: hasGoogleOAuth() },
     { label: "Microsoft OAuth", ok: hasMicrosoftOAuth() },
     { label: "Claude", ok: hasClaudeKey() },
@@ -33,6 +36,9 @@ export default async function SettingsPage() {
         description="Firma, Steuer, Bank, Nummernkreise und Designvorlagen. Umgebung getrennt darunter."
       />
       <CompanySettingsForm />
+      <div className="mt-8">
+        <MailboxForm serverConfigured={hasIonosSmtp()} />
+      </div>
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <Panel title="Konto">
           <dl className="space-y-3 text-sm">

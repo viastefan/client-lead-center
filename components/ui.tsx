@@ -8,10 +8,10 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-[30px] font-medium tracking-[-0.04em]">{title}</h1>
-        {description ? <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{description}</p> : null}
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        {description ? <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -28,7 +28,7 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-dashed border-border bg-white/5 px-6 py-12 text-center">
+    <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
       <p className="text-sm font-medium">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">{description}</p>
       {action ? <div className="mt-5">{action}</div> : null}
@@ -67,9 +67,9 @@ export function StatCard({
   hint?: string;
 }) {
   return (
-    <div className="glass rounded-[28px] px-5 py-4">
+    <div className="glass rounded-lg px-4 py-3">
       <p className="kicker">{label}</p>
-      <p className="mt-2 text-[28px] font-medium tracking-[-0.045em]">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
     </div>
   );
@@ -87,15 +87,15 @@ export function Panel({
   description?: string;
 }) {
   return (
-    <section className="glass rounded-[28px]">
-      <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-3.5">
+    <section className="glass rounded-lg">
+      <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-medium">{title}</h2>
           {description ? <p className="mt-1 text-xs leading-5 text-muted">{description}</p> : null}
         </div>
         {action}
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-4 py-4">{children}</div>
     </section>
   );
 }

@@ -23,7 +23,7 @@ export default async function ClientsPage() {
         }
       />
 
-      <div className="glass hidden overflow-hidden rounded-3xl md:block">
+      <div className="glass hidden overflow-hidden rounded-lg md:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
             <tr>
@@ -66,7 +66,7 @@ export default async function ClientsPage() {
           <Link
             key={customer.id}
             href={`/clients/${customer.id}`}
-            className="glass block rounded-3xl px-4 py-4"
+            className="glass block rounded-lg px-4 py-4"
           >
             <div className="flex items-center justify-between gap-3">
               <p className="font-medium">{customer.company_name}</p>

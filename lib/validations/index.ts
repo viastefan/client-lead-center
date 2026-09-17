@@ -60,3 +60,22 @@ export const leadPatchSchema = z.object({
     .optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 });
+
+export const mailSendSchema = z.object({
+  to: z.string().trim().email().max(320),
+  subject: z.string().trim().min(1).max(200),
+  text: z.string().trim().min(1).max(20000),
+  host: z.string().trim().max(255).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  username: z.string().trim().email().max(320).optional(),
+  password: z.string().max(400).optional(),
+  fromName: z.string().trim().max(120).optional(),
+});
+
+export const mailTestSchema = z.object({
+  host: z.string().trim().max(255).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  username: z.string().trim().email().max(320).optional(),
+  password: z.string().max(400).optional(),
+  fromName: z.string().trim().max(120).optional(),
+});

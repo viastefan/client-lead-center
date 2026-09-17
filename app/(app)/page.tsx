@@ -6,9 +6,11 @@ import { matchCatalogToWebsites, VERCEL_CUSTOMER_SITES } from "@/lib/catalog/ver
 import { formatDateTime, leadStatusLabel } from "@/lib/format";
 import { FinancePulse } from "@/components/billing/finance-pulse";
 import { RecentDocuments } from "@/components/billing/recent-documents";
+import { ReminderPulse } from "@/components/ops/reminder-pulse";
 import {
   hasClaudeKey,
   hasGoogleOAuth,
+  hasIonosSmtp,
   hasMicrosoftOAuth,
   hasResendKey,
   isSupabaseAdminConfigured,
@@ -45,8 +47,11 @@ export default async function DashboardPage() {
     },
     {
       label: "Email",
-      ok: hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth(),
-      note: hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth() ? "Operational" : "Warning",
+      ok: hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth() || hasIonosSmtp(),
+      note:
+        hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth() || hasIonosSmtp()
+          ? "Operational"
+          : "Warning",
     },
     { label: "AI", ok: hasClaudeKey(), note: hasClaudeKey() ? "Operational" : "Warning" },
   ];
@@ -55,9 +60,12 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={`${greeting()}`}
-        description="Leads, Angebote und Rechnungen in einer ruhigen Oberfläche."
+        description="Leads, Angebote, Rechnungen und Verträge."
         action={
           <div className="flex flex-wrap gap-2">
+            <Link href="/contracts/new" className="btn-ghost">
+              Vertrag
+            </Link>
             <Link href="/invoices/new" className="btn-ghost">
               Rechnung
             </Link>
@@ -68,13 +76,14 @@ export default async function DashboardPage() {
         }
       />
 
+      <ReminderPulse />
       <FinancePulse />
 
       {stats.migrationMissing || connectedCount < VERCEL_CUSTOMER_SITES.length ? (
-        <div className="glass mb-6 rounded-3xl px-5 py-4">
+        <div className="glass mb-6 rounded-lg px-5 py-4">
           <p className="text-sm font-medium">Nächste Schritte</p>
           <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-muted">
-            <li>SQL-Migrationen in Supabase ausführen (init, website_connection, billing).</li>
+            <li>SQL-Migrationen in Supabase ausführen (init, website_connection, billing, ops).</li>
             <li>
               Unter{" "}
               <Link href="/integrations" className="underline hover:text-foreground">
@@ -114,7 +123,7 @@ export default async function DashboardPage() {
         >
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {matches.map(({ site, website }) => (
-              <li key={site.slug} className="rounded-2xl border border-border bg-white/5 px-4 py-3">
+              <li key={site.slug} className="rounded-md border border-border bg-white/[0.03] px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <EntityMark name={site.companyName} size="sm" />

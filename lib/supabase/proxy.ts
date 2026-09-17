@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   "/auth",
   "/api/health",
   "/api/leads",
+  "/pay",
   "/icon",
   "/apple-icon",
 ];
