@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { STORAGE_KEY } from "@/lib/billing/defaults";
 import { formatLongDate, formatMoney } from "@/lib/billing/format";
 import { paypalHref, snapshotFromBillingJson, type PaymentSnapshot } from "@/lib/billing/payment";
+
+function subscribeHydration() {
+  return () => undefined;
+}
 
 export function PaymentCard({
   token,
@@ -12,19 +16,9 @@ export function PaymentCard({
   token: string;
   snapshot: PaymentSnapshot | null;
 }) {
-  const [local, setLocal] = useState<PaymentSnapshot | null>(null);
-  const [hydrated, setHydrated] = useState(Boolean(snapshot));
-
-  useEffect(() => {
-    if (snapshot) {
-      setHydrated(true);
-      return;
-    }
-    setLocal(snapshotFromBillingJson(window.localStorage.getItem(STORAGE_KEY), token));
-    setHydrated(true);
-  }, [snapshot, token]);
-
-  const resolved = snapshot ?? local;
+  const ready = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const resolved =
+    snapshot ?? (ready ? snapshotFromBillingJson(window.localStorage.getItem(STORAGE_KEY), token) : null);
   const [copied, setCopied] = useState("");
 
   async function copy(label: string, value: string) {
@@ -34,7 +28,7 @@ export function PaymentCard({
     window.setTimeout(() => setCopied(""), 1400);
   }
 
-  if (!hydrated) {
+  if (!snapshot && !ready) {
     return <section className="glass h-64 animate-pulse rounded-lg" />;
   }
 

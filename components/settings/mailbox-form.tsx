@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Panel } from "@/components/ui";
 import { IONOS_DEFAULTS } from "@/lib/email/ionos-config";
 
@@ -8,32 +8,37 @@ const USER_KEY = "clc.mailbox.user";
 const HOST_KEY = "clc.mailbox.host";
 const PASS_KEY = "clc.mail.pass";
 
+function subscribeHydration() {
+  return () => undefined;
+}
+
 export function MailboxForm({ serverConfigured = false }: { serverConfigured?: boolean }) {
+  const ready = useSyncExternalStore(subscribeHydration, () => true, () => false);
   const [username, setUsername] = useState("");
-  const [host, setHost] = useState(IONOS_DEFAULTS.host);
+  const [host, setHost] = useState<string>(IONOS_DEFAULTS.host);
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
+  const [touched, setTouched] = useState(false);
 
-  useEffect(() => {
-    setUsername(window.localStorage.getItem(USER_KEY) ?? "");
-    setHost(window.localStorage.getItem(HOST_KEY) ?? IONOS_DEFAULTS.host);
-  }, []);
+  const workingUser = touched || !ready ? username : (window.localStorage.getItem(USER_KEY) ?? "");
+  const workingHost =
+    touched || !ready ? host : (window.localStorage.getItem(HOST_KEY) ?? IONOS_DEFAULTS.host);
 
   async function run(method: "PUT" | "POST", extra?: { to?: string; subject?: string; text?: string }) {
-    window.localStorage.setItem(USER_KEY, username);
-    window.localStorage.setItem(HOST_KEY, host);
+    window.localStorage.setItem(USER_KEY, workingUser);
+    window.localStorage.setItem(HOST_KEY, workingHost);
     if (password) window.sessionStorage.setItem(PASS_KEY, password);
     const sessionPass = password || window.sessionStorage.getItem(PASS_KEY) || "";
     const body =
       method === "PUT"
-        ? { host, port: 465, username: username || undefined, password: sessionPass || undefined }
+        ? { host: workingHost, port: 465, username: workingUser || undefined, password: sessionPass || undefined }
         : {
-            to: extra?.to ?? username,
+            to: extra?.to ?? workingUser,
             subject: extra?.subject ?? "Client Lead Center Test",
             text: extra?.text ?? "SMTP-Test von Client Lead Center.",
-            host,
+            host: workingHost,
             port: 465,
-            username: username || undefined,
+            username: workingUser || undefined,
             password: sessionPass || undefined,
           };
     const response = await fetch("/api/mail", {
@@ -56,11 +61,26 @@ export function MailboxForm({ serverConfigured = false }: { serverConfigured?: b
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-xs text-subtle">E-Mail</span>
-          <input className="field" type="email" value={username} onChange={(event) => setUsername(event.target.value)} />
+          <input
+            className="field"
+            type="email"
+            value={workingUser}
+            onChange={(event) => {
+              setTouched(true);
+              setUsername(event.target.value);
+            }}
+          />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-xs text-subtle">SMTP-Host</span>
-          <input className="field" value={host} onChange={(event) => setHost(event.target.value)} />
+          <input
+            className="field"
+            value={workingHost}
+            onChange={(event) => {
+              setTouched(true);
+              setHost(event.target.value);
+            }}
+          />
         </label>
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs text-subtle">Passwort (nur diese Sitzung)</span>
