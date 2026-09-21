@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { StatusDot } from "@/components/ui";
 import { readMonitorCache, subscribeMonitorCache } from "@/lib/ops/monitor-cache";
@@ -8,11 +8,8 @@ import { readMonitorCache, subscribeMonitorCache } from "@/lib/ops/monitor-cache
 export function MonitorStrip() {
   const cached = useSyncExternalStore(subscribeMonitorCache, readMonitorCache, () => null);
   const sites = cached?.sites ?? [];
-  const summary = useMemo(() => {
-    if (sites.length === 0) return "Sites noch nicht geprüft";
-    const up = sites.filter((site) => site.ok).length;
-    return `${up}/${sites.length} Sites live`;
-  }, [sites]);
+  const summary =
+    sites.length === 0 ? "Sites noch nicht geprüft" : `${sites.filter((site) => site.ok).length}/${sites.length} Sites live`;
 
   return (
     <Link
