@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PageHeader, StatusBadge } from "@/components/ui";
+import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { loadCustomers, loadLeads, loadWebsites } from "@/lib/data/workspace";
 import { formatDateTime, leadStatusLabel, priorityLabel } from "@/lib/format";
 import type { LeadStatus } from "@/types";
@@ -66,8 +66,8 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      <form className="glass mb-6 grid gap-3 rounded-lg p-4 md:grid-cols-4">
-        <select name="customerId" defaultValue={filters.customerId ?? ""} className="field h-10">
+      <form className="mb-6 grid gap-3 rounded-lg border border-border p-3 md:grid-cols-4">
+        <select name="customerId" defaultValue={filters.customerId ?? ""} className="field">
           <option value="">Kunde</option>
           {customers.map((customer) => (
             <option key={customer.id} value={customer.id}>
@@ -75,7 +75,7 @@ export default async function LeadsPage({
             </option>
           ))}
         </select>
-        <select name="websiteId" defaultValue={filters.websiteId ?? ""} className="field h-10">
+        <select name="websiteId" defaultValue={filters.websiteId ?? ""} className="field">
           <option value="">Website</option>
           {websites.map((site) => (
             <option key={site.id} value={site.id}>
@@ -83,7 +83,7 @@ export default async function LeadsPage({
             </option>
           ))}
         </select>
-        <select name="priority" defaultValue={filters.priority ?? ""} className="field h-10">
+        <select name="priority" defaultValue={filters.priority ?? ""} className="field">
           <option value="">Priorität</option>
           <option value="low">Niedrig</option>
           <option value="normal">Normal</option>
@@ -94,38 +94,34 @@ export default async function LeadsPage({
           name="q"
           defaultValue={filters.q ?? ""}
           placeholder="Name, E-Mail, Text"
-          className="field h-10"
+          className="field"
         />
         <input type="hidden" name="status" value={status} />
-        <button type="submit" className="btn-primary h-10 md:col-span-4 md:w-32">
+        <button type="submit" className="btn-primary md:col-span-4 md:w-28">
           Filtern
         </button>
       </form>
 
-      <div className="space-y-3">
+      {leads.length === 0 ? (
+        <EmptyState title="Keine Leads" description="Keine Anfragen für diesen Filter." />
+      ) : (
+      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
         {leads.map((lead) => (
-          <Link
-            key={lead.id}
-            href={`/leads/${lead.id}`}
-            className="glass block rounded-lg px-5 py-4 transition hover:bg-white/[0.04]"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="font-medium">{lead.name}</p>
-                <p className="mt-1 text-sm text-muted">{lead.email}</p>
-                <p className="mt-2 line-clamp-2 text-sm text-muted">{lead.message}</p>
+          <li key={lead.id}>
+            <Link href={`/leads/${lead.id}`} className="row rounded-none">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium">{lead.name}</p>
+                <p className="truncate text-[12px] text-muted">
+                  {lead.customer?.company_name ?? "Kunde"} · {lead.email} · {formatDateTime(lead.created_at)}
+                </p>
               </div>
-              <div className="flex shrink-0 flex-wrap gap-2 text-xs">
-                <StatusBadge>{leadStatusLabel(lead.status)}</StatusBadge>
-                <StatusBadge>{priorityLabel(lead.priority)}</StatusBadge>
-              </div>
-            </div>
-            <p className="mt-3 text-xs text-subtle">
-              {lead.customer?.company_name ?? "Kunde"} · {lead.website?.domain ?? "Website"} · {formatDateTime(lead.created_at)}
-            </p>
-          </Link>
+              <StatusBadge>{leadStatusLabel(lead.status)}</StatusBadge>
+              <StatusBadge>{priorityLabel(lead.priority)}</StatusBadge>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
+      )}
     </>
   );
 }

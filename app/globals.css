@@ -2,18 +2,18 @@
 
 :root {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #ededed;
-  --muted: #8a8a8a;
-  --subtle: #666666;
-  --border: #262626;
-  --card: #0a0a0a;
-  --accent: #ffffff;
-  --accent-fg: #000000;
-  --success: #50e3c2;
-  --warning: #f5a623;
-  --danger: #e5484d;
-  --glow: #ffffff;
+  --background: #0c0c0d;
+  --foreground: #ececee;
+  --muted: #8a8a90;
+  --subtle: #636368;
+  --border: #232326;
+  --card: #141416;
+  --accent: #5e6ad2;
+  --accent-fg: #ffffff;
+  --success: #4ade80;
+  --warning: #f5a524;
+  --danger: #f87171;
+  --glow: #5e6ad2;
 }
 
 @theme inline {
@@ -88,8 +88,22 @@ pre {
 }
 
 .glass-strong {
-  background: #000;
+  background: #111113;
   border: 1px solid var(--border);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  transition: background 0.12s ease;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .kicker {
@@ -101,11 +115,11 @@ pre {
 }
 
 .field {
-  height: 2.25rem;
+  height: 2rem;
   width: 100%;
   border-radius: 0.375rem;
   border: 1px solid var(--border);
-  background: #111;
+  background: #0c0c0d;
   padding: 0 0.7rem;
   color: var(--foreground);
   font-size: 0.8125rem;
@@ -113,8 +127,8 @@ pre {
 }
 
 .field:focus {
-  border-color: #444;
-  background: #111;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: #0c0c0d;
 }
 
 .btn-primary {
@@ -128,7 +142,7 @@ pre {
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0 0.75rem;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
 .btn-primary:hover {
@@ -153,7 +167,7 @@ pre {
 }
 
 .btn-ghost:hover {
-  background: #111;
+  background: rgba(255, 255, 255, 0.05);
   border-color: #333;
 }
 

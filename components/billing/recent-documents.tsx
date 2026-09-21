@@ -19,7 +19,7 @@ export function RecentDocuments() {
       title="Dokumente"
       description="Die letzten Angebote, Rechnungen und Verträge."
       action={
-        <Link href="/quotes" className="text-sm text-muted hover:text-foreground">
+        <Link href="/quotes" className="text-[12px] text-muted hover:text-foreground">
           Alle
         </Link>
       }
@@ -27,20 +27,19 @@ export function RecentDocuments() {
       {rows.length === 0 ? (
         <p className="text-sm text-muted">Noch keine Dokumente.</p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul>
           {rows.map((doc) => (
-            <li key={doc.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-              <EntityMark name={doc.customerName || kindLabel(doc.kind)} size="sm" />
-              <Link href={`${kindHref(doc.kind)}/${doc.id}`} className="min-w-0 flex-1 hover:underline">
-                <span className="block truncate text-sm font-medium">
+            <li key={doc.id} className="border-b border-border last:border-0">
+              <Link href={`${kindHref(doc.kind)}/${doc.id}`} className="row rounded-none px-0">
+                <EntityMark name={doc.customerName || kindLabel(doc.kind)} size="sm" />
+                <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
                   {doc.number || "Entwurf"} · {doc.customerName || "Ohne Kunde"}
                 </span>
-                <span className="block text-xs text-muted">{kindLabel(doc.kind)}</span>
+                <StatusBadge tone={statusTone(doc.status)}>{statusLabel(doc.status)}</StatusBadge>
+                <span className="hidden w-24 text-right text-[13px] tabular-nums sm:block">
+                  {formatMoney(documentTotals(doc).gross, doc.currency)}
+                </span>
               </Link>
-              <StatusBadge tone={statusTone(doc.status)}>{statusLabel(doc.status)}</StatusBadge>
-              <span className="hidden w-24 text-right text-sm tabular-nums sm:block">
-                {formatMoney(documentTotals(doc).gross, doc.currency)}
-              </span>
             </li>
           ))}
         </ul>

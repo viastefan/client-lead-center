@@ -1,6 +1,7 @@
 import {
   hasClaudeKey,
   hasGoogleOAuth,
+  hasIonosSmtp,
   hasMicrosoftOAuth,
   hasResendKey,
   isSupabaseAdminConfigured,
@@ -55,7 +56,7 @@ export async function GET() {
       }
     }
 
-    const emailConfigured = hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth();
+    const emailConfigured = hasResendKey() || hasGoogleOAuth() || hasMicrosoftOAuth() || hasIonosSmtp();
     const components = {
       api: "operational" as HealthComponentStatus,
       database: databaseComponent,

@@ -1,8 +1,10 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
+import { logOpsEvent } from "@/lib/ops/events";
 import { formatDocumentNumber, isOverdueInvoice } from "./calc";
 import { emptyBillingState, newLineItem, STORAGE_KEY } from "./defaults";
+import { kindHref, kindLabel } from "./labels";
 import { newPaymentToken } from "./payment";
 import type {
   BillingState,
@@ -171,6 +173,12 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
             : [saved, ...prev.documents],
         };
       });
+      logOpsEvent({
+        title: saved.number
+          ? `${kindLabel(saved.kind)} ${saved.number} gespeichert`
+          : `${kindLabel(saved.kind)} gespeichert`,
+        href: `${kindHref(saved.kind)}/${saved.id}`,
+      });
       return saved;
     },
     [persist],
@@ -243,6 +251,9 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           item.id === id ? withOverdue({ ...item, status, updatedAt: new Date().toISOString() }) : item,
         ),
       }));
+      if (status === "paid") {
+        logOpsEvent({ title: "Rechnung als bezahlt markiert", href: `/invoices/${id}` });
+      }
     },
     [persist],
   );
@@ -363,6 +374,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
       persist((prev) => ({ ...prev, reminders: [reminder, ...prev.reminders] }));
+      logOpsEvent({ title: `Erinnerung: ${reminder.title}`, href: "/reminders" });
       return reminder;
     },
     [persist],
@@ -412,6 +424,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           ],
         };
       });
+      logOpsEvent({ title: "Erinnerung erledigt", href: "/reminders" });
     },
     [persist],
   );

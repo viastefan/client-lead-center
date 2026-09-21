@@ -31,7 +31,7 @@ export function FinancePulse() {
           Zur Buchhaltung
         </Link>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Offene Angebote" value={formatMoney(openQuotes)} hint={`${quotes.length} aktiv`} />
         <StatCard label="Offene Rechnungen" value={formatMoney(openInvoices)} hint="Noch nicht bezahlt" />
         <StatCard label="Bezahlt" value={formatMoney(paid)} hint="Markiert als bezahlt" />

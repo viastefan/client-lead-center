@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { LeadWorkActions } from "@/components/ops/lead-work-actions";
 import { loadConversations, loadLead } from "@/lib/data/workspace";
 import { formatDateTime, leadStatusLabel, priorityLabel } from "@/lib/format";
 import { updateLeadAction } from "@/lib/actions";
@@ -19,7 +20,13 @@ export default async function LeadDetailPage({
 
   return (
     <>
-      <PageHeader title={lead.name} description={lead.email} />
+      <PageHeader
+        title={lead.name}
+        description={`${lead.email} · ${lead.customer?.company_name ?? "Kunde"}`}
+        action={
+          <LeadWorkActions customerId={lead.customer_id} customerName={lead.customer?.company_name ?? lead.name} />
+        }
+      />
 
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-6">
@@ -72,7 +79,7 @@ export default async function LeadDetailPage({
             <form action={updateLeadAction.bind(null, lead.id)} className="space-y-4">
               <label className="block text-sm">
                 <span className="mb-2 block text-muted">Status ändern</span>
-                <select name="status" defaultValue={lead.status} className="h-10 w-full rounded-lg border border-border bg-background px-3">
+                <select name="status" defaultValue={lead.status} className="field">
                   {LEAD_STATUSES.map((status) => (
                     <option key={status} value={status}>
                       {leadStatusLabel(status)}
@@ -82,7 +89,7 @@ export default async function LeadDetailPage({
               </label>
               <label className="block text-sm">
                 <span className="mb-2 block text-muted">Priorität ändern</span>
-                <select name="priority" defaultValue={lead.priority} className="field h-10 w-full">
+                <select name="priority" defaultValue={lead.priority} className="field">
                   {LEAD_PRIORITIES.map((priority) => (
                     <option key={priority} value={priority}>
                       {priorityLabel(priority)}
@@ -90,18 +97,21 @@ export default async function LeadDetailPage({
                   ))}
                 </select>
               </label>
-              <button type="submit" className="btn-primary h-9">
+              <button type="submit" className="btn-primary">
                 Speichern
               </button>
             </form>
             <form action={updateLeadAction.bind(null, lead.id)} className="mt-3">
               <input type="hidden" name="status" value="closed" />
-              <button type="submit" className="h-9 rounded-lg border border-border px-3 text-sm">
+              <button type="submit" className="btn-ghost">
                 Als erledigt markieren
               </button>
             </form>
+            <a href={`mailto:${lead.email}`} className="btn-ghost mt-3 inline-flex">
+              E-Mail
+            </a>
             <p className="mt-4 text-xs leading-5 text-subtle">
-              E-Mail senden ist vorbereitet, sobald eine Mailbox verbunden ist. In V1 noch nicht aktiv.
+              E-Mail öffnet das lokale Postfach. IONOS-Versand liegt unter E-Mail.
             </p>
           </Panel>
         </div>

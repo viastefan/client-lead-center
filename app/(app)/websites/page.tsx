@@ -42,16 +42,16 @@ export default async function WebsitesPage() {
         />
       ) : (
         <>
-          <div className="glass hidden overflow-hidden rounded-lg md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
+          <div className="hidden overflow-hidden rounded-lg border border-border md:block">
+            <table className="w-full text-left text-[13px]">
+              <thead className="border-b border-border text-[11px] text-subtle">
                 <tr>
-                  <th className="px-5 py-3 font-medium">Website</th>
-                  <th className="px-5 py-3 font-medium">Kunde</th>
-                  <th className="px-5 py-3 font-medium">Domain</th>
-                  <th className="px-5 py-3 font-medium">Vercel</th>
-                  <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Letzter Lead</th>
+                  <th className="px-4 py-2.5 font-medium">Website</th>
+                  <th className="px-4 py-2.5 font-medium">Kunde</th>
+                  <th className="px-4 py-2.5 font-medium">Domain</th>
+                  <th className="px-4 py-2.5 font-medium">Vercel</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 font-medium">Letzter Lead</th>
                 </tr>
               </thead>
               <tbody>
@@ -62,25 +62,25 @@ export default async function WebsitesPage() {
                     githubRepo: site.github_repo,
                   });
                   return (
-                    <tr key={site.id} className="border-b border-border last:border-0 hover:bg-background/70">
-                      <td className="px-5 py-4">
-                        <Link href={`/websites/${site.id}`} className="font-medium hover:underline">
+                    <tr key={site.id} className="border-b border-border last:border-0 hover:bg-white/[0.03]">
+                      <td className="px-4 py-2.5">
+                        <Link href={`/websites/${site.id}`} className="font-medium">
                           {site.name}
                         </Link>
                       </td>
-                      <td className="px-5 py-4 text-muted">{site.customer?.company_name ?? "—"}</td>
-                      <td className="px-5 py-4">{site.domain}</td>
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-2.5 text-muted">{site.customer?.company_name ?? "—"}</td>
+                      <td className="px-4 py-2.5">{site.domain}</td>
+                      <td className="px-4 py-2.5">
                         <StatusBadge tone={catalog || site.vercel_project ? "success" : "warning"}>
                           {catalog || site.vercel_project ? "Live" : "Manuell"}
                         </StatusBadge>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-2.5">
                         <StatusBadge tone={site.active ? "success" : "neutral"}>
                           {websiteStatusLabel(site.status)}
                         </StatusBadge>
                       </td>
-                      <td className="px-5 py-4 text-muted">{formatDateTime(site.last_lead_at)}</td>
+                      <td className="px-4 py-2.5 text-muted">{formatDateTime(site.last_lead_at)}</td>
                     </tr>
                   );
                 })}
@@ -88,16 +88,20 @@ export default async function WebsitesPage() {
             </table>
           </div>
 
-          <div className="space-y-3 md:hidden">
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border md:hidden">
             {websites.map((site) => (
-              <Link key={site.id} href={`/websites/${site.id}`} className="glass block rounded-lg px-4 py-4">
-                <p className="font-medium">{site.name}</p>
-                <p className="mt-1 text-sm text-muted">
-                  {site.customer?.company_name} · {site.domain}
-                </p>
-              </Link>
+              <li key={site.id}>
+                <Link href={`/websites/${site.id}`} className="row rounded-none">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-medium">{site.name}</p>
+                    <p className="truncate text-[12px] text-muted">
+                      {site.customer?.company_name} · {site.domain}
+                    </p>
+                  </div>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </>
       )}
     </>

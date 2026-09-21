@@ -61,12 +61,12 @@ export function DocumentList({
         />
       )}
 
-      <div className="glass mb-4 flex items-center rounded-md px-3">
+      <div className="mb-4 rounded-md border border-border px-3">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Nummer, Kunde, E-Mail"
-          className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-subtle"
+          className="h-10 w-full bg-transparent text-[13px] outline-none placeholder:text-subtle"
         />
       </div>
 
@@ -92,35 +92,35 @@ export function DocumentList({
           }
         />
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
           {rows.map((doc) => {
             const totals = documentTotals(doc);
             return (
               <li key={doc.id}>
-                <div className="glass flex items-center gap-4 rounded-lg px-4 py-3 transition hover:bg-white/[0.04]">
-                  <Link href={`${kindHref(doc.kind)}/${doc.id}`} className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="row rounded-none">
+                  <Link href={`${kindHref(doc.kind)}/${doc.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                     <EntityMark name={doc.customerName || kindLabel(doc.kind)} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
+                      <p className="truncate text-[13px] font-medium">
                         {doc.number || "Entwurf"} · {doc.customerName || "Ohne Kunde"}
                       </p>
-                      <p className="mt-0.5 truncate text-xs text-muted">
+                      <p className="truncate text-[12px] text-muted">
                         {kindLabel(doc.kind)} · {doc.issueDate}
                       </p>
                     </div>
                     <StatusBadge tone={statusTone(doc.status)}>{statusLabel(doc.status)}</StatusBadge>
-                    <p className="hidden w-28 text-right text-sm tabular-nums sm:block">
+                    <p className="hidden w-24 text-right text-[13px] tabular-nums sm:block">
                       {formatMoney(totals.gross, doc.currency)}
                     </p>
                   </Link>
                   {archived ? (
-                    <button type="button" className="btn-ghost h-9 shrink-0" onClick={() => restoreDocument(doc.id)}>
+                    <button type="button" className="btn-ghost shrink-0" onClick={() => restoreDocument(doc.id)}>
                       Zurück
                     </button>
                   ) : doc.kind === "invoice" && doc.status !== "paid" ? (
                     <button
                       type="button"
-                      className="btn-ghost h-9 shrink-0"
+                      className="btn-ghost shrink-0"
                       onClick={() => setDocumentStatus(doc.id, "paid")}
                     >
                       Bezahlt

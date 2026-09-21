@@ -23,63 +23,61 @@ export default async function ClientsPage() {
         }
       />
 
-      <div className="glass hidden overflow-hidden rounded-lg md:block">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-xs uppercase tracking-wide text-subtle">
+      <div className="hidden overflow-hidden rounded-lg border border-border md:block">
+        <table className="w-full text-left text-[13px]">
+          <thead className="border-b border-border text-[11px] text-subtle">
             <tr>
-              <th className="px-5 py-3 font-medium">Kunde</th>
-              <th className="px-5 py-3 font-medium">Websites</th>
-              <th className="px-5 py-3 font-medium">Leads</th>
-              <th className="px-5 py-3 font-medium">E-Mail</th>
-              <th className="px-5 py-3 font-medium">Status</th>
-              <th className="px-5 py-3 font-medium">Letzte Aktivität</th>
+              <th className="px-4 py-2.5 font-medium">Kunde</th>
+              <th className="px-4 py-2.5 font-medium">Websites</th>
+              <th className="px-4 py-2.5 font-medium">Leads</th>
+              <th className="px-4 py-2.5 font-medium">E-Mail</th>
+              <th className="px-4 py-2.5 font-medium">Status</th>
+              <th className="px-4 py-2.5 font-medium">Aktivität</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((customer) => (
-              <tr key={customer.id} className="border-b border-border last:border-0 hover:bg-background/70">
-                <td className="px-5 py-4">
-                  <Link href={`/clients/${customer.id}`} className="font-medium hover:underline">
+              <tr key={customer.id} className="border-b border-border last:border-0 hover:bg-white/[0.03]">
+                <td className="px-4 py-2.5">
+                  <Link href={`/clients/${customer.id}`} className="font-medium">
                     {customer.company_name}
                   </Link>
-                  <p className="mt-1 text-muted">{customer.contact_name}</p>
+                  <p className="text-[12px] text-muted">{customer.contact_name}</p>
                 </td>
-                <td className="px-5 py-4">{customer.website_count}</td>
-                <td className="px-5 py-4">{customer.lead_count}</td>
-                <td className="px-5 py-4">
+                <td className="px-4 py-2.5 tabular-nums">{customer.website_count}</td>
+                <td className="px-4 py-2.5 tabular-nums">{customer.lead_count}</td>
+                <td className="px-4 py-2.5 text-muted">
                   {customer.email_status ? emailStatusLabel(customer.email_status) : "—"}
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-4 py-2.5">
                   <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
                     {customerStatusLabel(customer.status)}
                   </StatusBadge>
                 </td>
-                <td className="px-5 py-4 text-muted">{formatDateTime(customer.last_activity_at)}</td>
+                <td className="px-4 py-2.5 text-muted">{formatDateTime(customer.last_activity_at)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="space-y-3 md:hidden">
+      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border md:hidden">
         {customers.map((customer) => (
-          <Link
-            key={customer.id}
-            href={`/clients/${customer.id}`}
-            className="glass block rounded-lg px-4 py-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-medium">{customer.company_name}</p>
+          <li key={customer.id}>
+            <Link href={`/clients/${customer.id}`} className="row rounded-none">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium">{customer.company_name}</p>
+                <p className="text-[12px] text-muted">
+                  {customer.website_count} Sites · {customer.lead_count} Leads
+                </p>
+              </div>
               <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
                 {customerStatusLabel(customer.status)}
               </StatusBadge>
-            </div>
-            <p className="mt-2 text-sm text-muted">
-              {customer.website_count} Websites · {customer.lead_count} Leads
-            </p>
-          </Link>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </>
   );
 }
