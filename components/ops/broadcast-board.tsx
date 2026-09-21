@@ -130,6 +130,14 @@ export function BroadcastBoard({
             <p className="text-[13px] font-medium">Rundmail</p>
             <p className="mt-0.5 text-[12px] text-muted">Eine Vorlage, einzeln an jeden Kunden. Kein offenes BCC.</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void run(true)}>
+              Vorschau
+            </button>
+            <button type="button" className="btn-primary" disabled={busy || !confirmLive} onClick={() => void run(false)}>
+              {busy ? "Sende…" : `Senden (${chosen.length})`}
+            </button>
+          </div>
         </div>
         <div className="space-y-4 px-4 py-4">
           <div className="flex flex-wrap gap-2">
@@ -153,7 +161,7 @@ export function BroadcastBoard({
           <label className="block">
             <span className="mb-1.5 block text-xs text-subtle">Text · {"{company} {contact} {email} {domain}"}</span>
             <textarea
-              className="min-h-48 w-full rounded-md border border-border bg-[#0c0c0d] px-3 py-2 text-[13px] outline-none"
+              className="min-h-36 w-full rounded-md border border-border bg-[#0c0c0d] px-3 py-2 text-[13px] outline-none"
               value={text}
               onChange={(event) => setText(event.target.value)}
             />
@@ -166,14 +174,6 @@ export function BroadcastBoard({
             />
             An {chosen.length} echte Adressen senden
           </label>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-ghost" disabled={busy} onClick={() => void run(true)}>
-              Vorschau
-            </button>
-            <button type="button" className="btn-primary" disabled={busy || !confirmLive} onClick={() => void run(false)}>
-              {busy ? "Sende…" : `Senden (${chosen.length})`}
-            </button>
-          </div>
           {status ? <p className="text-[13px] text-muted">{status}</p> : null}
           {livePreview ? (
             <div className="rounded-md border border-border px-3 py-3">

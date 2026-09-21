@@ -28,10 +28,10 @@ export default async function EmailsPage({
         title="E-Mail"
         description="Postfach verbinden, dann Rundmails an alle Kunden. Jede Adresse einzeln über die Mail-API."
       />
-      <div className="mb-6">
+      <BroadcastBoard recipients={recipients} presetId={presetId} />
+      <div className="mt-6">
         <MailboxForm serverConfigured={ionos} />
       </div>
-      <BroadcastBoard recipients={recipients} presetId={presetId} />
       <div className="mt-6">
         <Panel title="Kunden-Mailboxen">
           {accounts.length === 0 ? (

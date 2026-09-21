@@ -48,11 +48,7 @@ export function MailboxForm({ serverConfigured = false }: { serverConfigured?: b
     >
       {serverConfigured ? (
         <p className="mb-3 text-[13px] text-muted">Server-Postfach ist über IONOS_SMTP_* verbunden.</p>
-      ) : (
-        <p className="mb-3 text-[13px] text-muted">
-          Benutzername und Passwort des 1&1-Postfachs eintragen, dann Verbindung testen. Danach gehen Rundmails und Dokumente raus.
-        </p>
-      )}
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-xs text-subtle">E-Mail</span>
