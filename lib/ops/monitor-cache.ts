@@ -16,19 +16,30 @@ export type MonitorCache = {
   };
 };
 
+let monitorRaw: string | null | undefined;
+let monitorSnap: MonitorCache | null = null;
+
 export function readMonitorCache(): MonitorCache | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.sessionStorage.getItem(MONITOR_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as MonitorCache) : null;
+    if (raw === monitorRaw) return monitorSnap;
+    monitorRaw = raw;
+    monitorSnap = raw ? (JSON.parse(raw) as MonitorCache) : null;
+    return monitorSnap;
   } catch {
+    monitorRaw = null;
+    monitorSnap = null;
     return null;
   }
 }
 
 export function writeMonitorCache(payload: MonitorCache) {
   if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(MONITOR_CACHE_KEY, JSON.stringify(payload));
+  const raw = JSON.stringify(payload);
+  window.sessionStorage.setItem(MONITOR_CACHE_KEY, raw);
+  monitorRaw = raw;
+  monitorSnap = payload;
   window.dispatchEvent(new Event(MONITOR_EVENT));
 }
 

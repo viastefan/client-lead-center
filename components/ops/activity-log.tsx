@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import { readOpsEventsFromStorage, subscribeOpsEvents } from "@/lib/ops/events";
+import { EMPTY_OPS_EVENTS, readOpsEventsFromStorage, subscribeOpsEvents } from "@/lib/ops/events";
 
 function formatStamp(iso: string) {
   const date = new Date(iso);
@@ -11,7 +11,7 @@ function formatStamp(iso: string) {
 }
 
 export function ActivityLog() {
-  const events = useSyncExternalStore(subscribeOpsEvents, readOpsEventsFromStorage, () => []);
+  const events = useSyncExternalStore(subscribeOpsEvents, readOpsEventsFromStorage, () => EMPTY_OPS_EVENTS);
   const rows = events.slice(0, 8);
 
   return (

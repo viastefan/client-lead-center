@@ -16,7 +16,15 @@ export function AttentionList({ leads }: { leads: InboxLead[] }) {
   if (!ready) return <div className="glass h-32 animate-pulse rounded-lg" />;
   if (rows.length === 0) {
     return (
-      <div className="glass rounded-lg px-4 py-5 text-[13px] text-muted">Nichts Offenes. Inbox ist leer.</div>
+      <section className="overflow-hidden rounded-lg border border-border">
+        <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+          <p className="text-[13px] font-medium">Jetzt</p>
+          <Link href="/inbox" className="text-[12px] text-muted hover:text-foreground">
+            Inbox
+          </Link>
+        </div>
+        <p className="px-4 py-5 text-[13px] text-muted">Nichts Offenes.</p>
+      </section>
     );
   }
 

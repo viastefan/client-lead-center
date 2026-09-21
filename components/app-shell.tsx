@@ -100,17 +100,19 @@ export function AppShell({
   user,
   children,
   preview = false,
+  leadInbox = 0,
 }: {
   user: SessionUser;
   children: React.ReactNode;
   preview?: boolean;
+  leadInbox?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { documents, reminders, ready } = useBilling();
   const inboxCount = useMemo(
-    () => (ready ? buildInbox({ documents, reminders }).length : 0),
-    [documents, ready, reminders],
+    () => (ready ? buildInbox({ documents, reminders }).length : 0) + leadInbox,
+    [documents, leadInbox, ready, reminders],
   );
   const initial = (user.profile?.full_name || user.email || "A").slice(0, 1).toUpperCase();
 

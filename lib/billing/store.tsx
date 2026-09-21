@@ -107,7 +107,8 @@ function writeState(state: BillingState) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function subscribeHydration() {
+function subscribeHydration(onStoreChange: () => void) {
+  queueMicrotask(onStoreChange);
   return () => undefined;
 }
 
