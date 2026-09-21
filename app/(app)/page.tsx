@@ -56,6 +56,9 @@ export default async function DashboardPage() {
         description="Eine Inbox. Acht Sites. Finanzen und Leads in einer Linie."
         action={
           <div className="flex flex-wrap gap-2">
+            <Link href="/emails" className="btn-ghost">
+              Rundmail
+            </Link>
             <Link href="/monitor" className="btn-ghost">
               Überwachung
             </Link>

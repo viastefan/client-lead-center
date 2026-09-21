@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       to: parsed.data.to,
       subject: parsed.data.subject,
       text: parsed.data.text,
+      html: parsed.data.html,
     });
 
     logger.info("mail.sent", { requestId, to: parsed.data.to });

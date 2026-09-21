@@ -16,6 +16,7 @@ const ROUTES = [
   { href: "/invoices/new", label: "Neue Rechnung" },
   { href: "/contracts/new", label: "Neuer Vertrag" },
   { href: "/reminders", label: "Erinnerungen" },
+  { href: "/emails", label: "Rundmail" },
   { href: "/emails", label: "E-Mail" },
   { href: "/websites", label: "Websites" },
   { href: "/settings", label: "Einstellungen" },

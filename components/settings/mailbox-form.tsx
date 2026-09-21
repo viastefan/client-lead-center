@@ -3,44 +3,35 @@
 import { useState, useSyncExternalStore } from "react";
 import { Panel } from "@/components/ui";
 import { IONOS_DEFAULTS } from "@/lib/email/ionos-config";
+import { mailboxPayload, readMailboxClient, writeMailboxClient } from "@/lib/email/mailbox-client";
 
-const USER_KEY = "clc.mailbox.user";
-const HOST_KEY = "clc.mailbox.host";
-const PASS_KEY = "clc.mail.pass";
-
-function subscribeHydration() {
+function subscribeHydration(onStoreChange: () => void) {
+  queueMicrotask(onStoreChange);
   return () => undefined;
 }
 
 export function MailboxForm({ serverConfigured = false }: { serverConfigured?: boolean }) {
   const ready = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const stored = ready ? readMailboxClient() : {};
   const [username, setUsername] = useState("");
   const [host, setHost] = useState<string>(IONOS_DEFAULTS.host);
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const workingUser = touched || !ready ? username : (window.localStorage.getItem(USER_KEY) ?? "");
-  const workingHost =
-    touched || !ready ? host : (window.localStorage.getItem(HOST_KEY) ?? IONOS_DEFAULTS.host);
+  const workingUser = touched ? username : (stored.username ?? "");
+  const workingHost = touched ? host : (stored.host ?? IONOS_DEFAULTS.host);
 
   async function run(method: "PUT" | "POST", extra?: { to?: string; subject?: string; text?: string }) {
-    window.localStorage.setItem(USER_KEY, workingUser);
-    window.localStorage.setItem(HOST_KEY, workingHost);
-    if (password) window.sessionStorage.setItem(PASS_KEY, password);
-    const sessionPass = password || window.sessionStorage.getItem(PASS_KEY) || "";
+    writeMailboxClient({ username: workingUser, host: workingHost, password });
     const body =
       method === "PUT"
-        ? { host: workingHost, port: 465, username: workingUser || undefined, password: sessionPass || undefined }
-        : {
+        ? mailboxPayload()
+        : mailboxPayload({
             to: extra?.to ?? workingUser,
             subject: extra?.subject ?? "Client Lead Center Test",
             text: extra?.text ?? "SMTP-Test von Client Lead Center.",
-            host: workingHost,
-            port: 465,
-            username: workingUser || undefined,
-            password: sessionPass || undefined,
-          };
+          });
     const response = await fetch("/api/mail", {
       method,
       headers: { "content-type": "application/json" },
@@ -56,8 +47,12 @@ export function MailboxForm({ serverConfigured = false }: { serverConfigured?: b
       description="SMTP smtp.ionos.de:465. Passwort nur in dieser Sitzung, nie in NEXT_PUBLIC."
     >
       {serverConfigured ? (
-        <p className="mb-3 text-sm text-muted">Server-Postfach ist über IONOS_SMTP_* verbunden.</p>
-      ) : null}
+        <p className="mb-3 text-[13px] text-muted">Server-Postfach ist über IONOS_SMTP_* verbunden.</p>
+      ) : (
+        <p className="mb-3 text-[13px] text-muted">
+          Benutzername und Passwort des 1&1-Postfachs eintragen, dann Verbindung testen. Danach gehen Rundmails und Dokumente raus.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-xs text-subtle">E-Mail</span>
@@ -95,7 +90,7 @@ export function MailboxForm({ serverConfigured = false }: { serverConfigured?: b
           Testmail an mich
         </button>
       </div>
-      {status ? <p className="mt-3 text-sm text-muted">{status}</p> : null}
+      {status ? <p className="mt-3 text-[13px] text-muted">{status}</p> : null}
     </Panel>
   );
 }

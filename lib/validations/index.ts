@@ -65,6 +65,7 @@ export const mailSendSchema = z.object({
   to: z.string().trim().email().max(320),
   subject: z.string().trim().min(1).max(200),
   text: z.string().trim().min(1).max(20000),
+  html: z.string().trim().max(40000).optional(),
   host: z.string().trim().max(255).optional(),
   port: z.number().int().min(1).max(65535).optional(),
   username: z.string().trim().email().max(320).optional(),
@@ -73,6 +74,26 @@ export const mailSendSchema = z.object({
 });
 
 export const mailTestSchema = z.object({
+  host: z.string().trim().max(255).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  username: z.string().trim().email().max(320).optional(),
+  password: z.string().max(400).optional(),
+  fromName: z.string().trim().max(120).optional(),
+});
+
+export const mailBroadcastRecipientSchema = z.object({
+  id: z.string().trim().min(1).max(120),
+  company: z.string().trim().min(1).max(200),
+  contact: z.string().trim().max(200).default(""),
+  email: z.string().trim().email().max(320),
+  domain: z.string().trim().max(255).default(""),
+});
+
+export const mailBroadcastSchema = z.object({
+  dryRun: z.boolean().optional().default(false),
+  subject: z.string().trim().min(1).max(200),
+  text: z.string().trim().min(1).max(20000),
+  recipients: z.array(mailBroadcastRecipientSchema).min(1).max(30),
   host: z.string().trim().max(255).optional(),
   port: z.number().int().min(1).max(65535).optional(),
   username: z.string().trim().email().max(320).optional(),

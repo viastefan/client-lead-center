@@ -57,7 +57,7 @@ export async function verifySmtp(account: SmtpAccount): Promise<void> {
 
 export async function sendSmtpMail(
   account: SmtpAccount,
-  input: { to: string; subject: string; text: string },
+  input: { to: string; subject: string; text: string; html?: string },
 ): Promise<void> {
   const mailer = transport(account);
   try {
@@ -66,6 +66,7 @@ export async function sendSmtpMail(
       to: input.to,
       subject: input.subject,
       text: input.text,
+      html: input.html,
     });
   } finally {
     mailer.close();

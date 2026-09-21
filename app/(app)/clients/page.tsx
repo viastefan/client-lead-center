@@ -14,12 +14,14 @@ export default async function ClientsPage() {
         title="Kunden"
         description="Mandanten, Websites und Lead-Volumen an einem Ort."
         action={
-          <Link
-            href="/clients/new"
-            className="btn-primary"
-          >
-            + Kunde
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/emails" className="btn-ghost">
+              Rundmail
+            </Link>
+            <Link href="/clients/new" className="btn-primary">
+              + Kunde
+            </Link>
+          </div>
         }
       />
 

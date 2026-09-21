@@ -23,6 +23,8 @@ import { newLineItem } from "@/lib/billing/defaults";
 import { useBilling } from "@/lib/billing/store";
 import type { BusinessDocument, DocumentKind, DocumentStatus, LineItem, TemplateId } from "@/lib/billing/types";
 import { demoCustomers } from "@/lib/demo/workspace";
+import { mailboxPayload } from "@/lib/email/mailbox-client";
+import { htmlFromText } from "@/lib/email/html";
 
 function applyCustomer(doc: BusinessDocument, customerId: string): BusinessDocument {
   const customer = demoCustomers().find((item) => item.id === customerId);
@@ -176,20 +178,17 @@ function DocumentEditorForm({
     const saved = commitDocument(working);
     setWorking(saved);
     const { subject, body } = mailCopy(saved);
-    const password = window.sessionStorage.getItem("clc.mail.pass") ?? "";
-    const username = window.localStorage.getItem("clc.mailbox.user") ?? "";
-    const host = window.localStorage.getItem("clc.mailbox.host") ?? "";
     const response = await fetch("/api/mail", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        to: saved.customerEmail,
-        subject,
-        text: body,
-        host: host || undefined,
-        username: username || undefined,
-        password: password || undefined,
-      }),
+      body: JSON.stringify(
+        mailboxPayload({
+          to: saved.customerEmail,
+          subject,
+          text: body,
+          html: htmlFromText(body, saved.customerName || "Dokument"),
+        }),
+      ),
     });
     const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
     setMailFlash(payload.success ? "Gesendet" : payload.error?.message || "Fehler");

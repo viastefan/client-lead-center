@@ -61,6 +61,9 @@ export default async function ClientDetailPage({
             <Link href={`/contracts/new?customer=${customer.id}`} className="btn-ghost">
               Vertrag
             </Link>
+            <Link href={`/emails?customer=${customer.id}`} className="btn-ghost">
+              Rundmail
+            </Link>
             <StatusBadge tone={customer.status === "active" ? "success" : "neutral"}>
               {customerStatusLabel(customer.status)}
             </StatusBadge>
@@ -137,13 +140,21 @@ export default async function ClientDetailPage({
       ) : null}
 
       {tab === "email" ? (
-        <Panel title="E-Mail-Verbindungen">
-          {emails.length === 0 ? (
-            <p className="text-sm text-muted">Noch keine Mailbox verbunden. IONOS SMTP liegt unter E-Mail.</p>
-          ) : (
-            <ul className="space-y-3">
+        <Panel
+          title="E-Mail"
+          action={
+            <Link href={`/emails?customer=${customer.id}`} className="text-[12px] text-muted hover:text-foreground">
+              Rundmail
+            </Link>
+          }
+        >
+          <p className="text-[13px] text-muted">
+            Kontakt: {customer.contact_email}. Versand über IONOS SMTP unter E-Mail.
+          </p>
+          {emails.length === 0 ? null : (
+            <ul className="mt-4 space-y-3">
               {emails.map((account) => (
-                <li key={account.id} className="flex items-center justify-between text-sm">
+                <li key={account.id} className="flex items-center justify-between text-[13px]">
                   <span>
                     {account.email} · {account.provider}
                   </span>
