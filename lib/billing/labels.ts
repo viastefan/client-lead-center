@@ -62,7 +62,7 @@ export const TEMPLATE_META: Record<TemplateId, { name: string; note: string }> =
   noir: { name: "Noir", note: "Dunkles Studio, 2030, für den Screen." },
 };
 
-export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "invoiced"] as const;
+export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "invoiced", "expired"] as const;
 export const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue"] as const;
 export const CONTRACT_STATUSES = ["draft", "sent", "signed", "active", "expired", "cancelled"] as const;
 

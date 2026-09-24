@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, Link2, Plus, Printer, Send, Trash2 } from "lucide-react";
 import { DocumentPreview } from "@/components/billing/document-preview";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { documentTotals, lineNet } from "@/lib/billing/calc";
-import { documentCorrespondence } from "@/lib/billing/correspondence";
-import { formatMoney } from "@/lib/billing/format";
+import { documentCorrespondence, type CorrespondenceVariant } from "@/lib/billing/correspondence";
+import { formatLongDate, formatMoney } from "@/lib/billing/format";
 import { CONTRACT_STATUSES, INVOICE_STATUSES, QUOTE_STATUSES, TEMPLATE_META, dateFieldLabel, kindHref, kindLabel, newKindTitle, statusLabel } from "@/lib/billing/labels";
 import { paymentSnapshotFor, paymentUrl } from "@/lib/billing/payment";
 import { newLineItem } from "@/lib/billing/defaults";
@@ -21,7 +21,7 @@ import { findDirectoryCustomer } from "@/lib/crm/directory";
 import { useDirectory } from "@/lib/crm/use-directory";
 import type { DirectoryCustomer } from "@/lib/crm/types";
 import { mailboxPayload } from "@/lib/email/mailbox-client";
-import { htmlFromText } from "@/lib/email/html";
+import { documentMailHtml } from "@/lib/email/document-mail";
 
 function bindRecipient(doc: BusinessDocument): BusinessDocument {
   const saved = persistRecipientFromDocument(doc);
@@ -33,12 +33,23 @@ function bindRecipient(doc: BusinessDocument): BusinessDocument {
     customerContact: saved.contactName || doc.customerContact,
     customerEmail: saved.email || doc.customerEmail,
     customerAddress: saved.address || doc.customerAddress,
+    customerVatId: saved.vatId || doc.customerVatId,
+    customerPhone: saved.phone || doc.customerPhone,
   };
 }
 
 function applyDirectoryCustomer(doc: BusinessDocument, customer: DirectoryCustomer | null): BusinessDocument {
   if (!customer) {
-    return { ...doc, customerId: "", customerName: "", customerContact: "", customerEmail: "", customerAddress: "" };
+    return {
+      ...doc,
+      customerId: "",
+      customerName: "",
+      customerContact: "",
+      customerEmail: "",
+      customerAddress: "",
+      customerVatId: "",
+      customerPhone: "",
+    };
   }
   return {
     ...doc,
@@ -47,6 +58,8 @@ function applyDirectoryCustomer(doc: BusinessDocument, customer: DirectoryCustom
     customerContact: customer.contactName,
     customerEmail: customer.email,
     customerAddress: customer.address || customer.domain,
+    customerVatId: customer.vatId,
+    customerPhone: customer.phone,
   };
 }
 
@@ -100,12 +113,14 @@ function DocumentEditorForm({
 }) {
   const id = persistedId;
   const router = useRouter();
-  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, convertQuoteToContract, duplicateDocument, addReminder, reminders } =
+  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, convertQuoteToContract, duplicateDocument, addReminder, reminders, setDocumentStatus } =
     useBilling();
   const [working, setWorking] = useState(initial);
   const [savedFlash, setSavedFlash] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mailFlash, setMailFlash] = useState("");
+  const [sending, setSending] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const totals = documentTotals(working);
   const statuses = kind === "quote" ? QUOTE_STATUSES : kind === "invoice" ? INVOICE_STATUSES : CONTRACT_STATUSES;
   const title = useMemo(() => {
@@ -114,6 +129,7 @@ function DocumentEditorForm({
 
   function patch(partial: Partial<BusinessDocument>) {
     setWorking({ ...working, ...partial });
+    setDirty(true);
   }
 
   function patchItem(itemId: string, partial: Partial<LineItem>) {
@@ -125,15 +141,18 @@ function DocumentEditorForm({
   function save() {
     const saved = commitDocument(bindRecipient(working));
     setWorking(saved);
+    setDirty(false);
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1400);
     if (!id) {
       router.replace(`${kindHref(kind)}/${saved.id}`);
     }
+    return saved;
   }
 
   function printDoc() {
     commitDocument(bindRecipient(working));
+    setDirty(false);
     window.print();
   }
 
@@ -144,14 +163,16 @@ function DocumentEditorForm({
     window.setTimeout(() => setCopied(false), 1400);
   }
 
-  async function sendMail(variant: "send" | "reminder" = "send") {
+  async function sendMail(variant: CorrespondenceVariant = "send") {
     if (!working.customerEmail) {
       setMailFlash("Empfänger ohne E-Mail");
       window.setTimeout(() => setMailFlash(""), 1600);
       return;
     }
+    setSending(true);
     const saved = commitDocument(bindRecipient(working));
     setWorking(saved);
+    setDirty(false);
     const { subject, body } = documentCorrespondence(saved, company, window.location.origin, variant);
     const response = await fetch("/api/mail", {
       method: "POST",
@@ -161,17 +182,20 @@ function DocumentEditorForm({
           to: saved.customerEmail,
           subject,
           text: body,
-          html: htmlFromText(body, company.legalName),
+          html: documentMailHtml(saved, company, body, variant),
           fromName: company.legalName,
         }),
       ),
     });
     const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
     if (payload.success) {
-      if (variant === "send" && saved.status === "draft") {
-        const sent = commitDocument({ ...saved, status: "sent" });
-        setWorking(sent);
-      }
+      const mailed = commitDocument({
+        ...saved,
+        status: variant === "send" && saved.status === "draft" ? "sent" : saved.status,
+        sentAt: saved.sentAt || new Date().toISOString(),
+        lastMailedAt: new Date().toISOString(),
+      });
+      setWorking(mailed);
       if (variant === "send" && saved.kind === "invoice" && !reminders.some((item) => item.relatedId === saved.id)) {
         addReminder({
           title: `Zahlung ${saved.number} nachfassen`,
@@ -183,7 +207,8 @@ function DocumentEditorForm({
         });
       }
     }
-    setMailFlash(payload.success ? (variant === "reminder" ? "Erinnerung gesendet" : "Gesendet") : payload.error?.message || "Fehler");
+    setSending(false);
+    setMailFlash(payload.success ? (variant === "reminder" ? "Erinnerung gesendet" : variant === "followup" ? "Nachgefasst" : "Gesendet") : payload.error?.message || "Fehler");
     window.setTimeout(() => setMailFlash(""), 2400);
   }
 
@@ -195,25 +220,43 @@ function DocumentEditorForm({
     window.setTimeout(() => setCopied(false), 1400);
   }
 
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        save();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   return (
     <div className="document-workspace">
       <PageHeader
         title={title}
-        description="Links schreiben, rechts die Vorlage. Drucken erzeugt ein sauberes DIN-A4."
+        description={dirty ? "Ungespeicherte Änderungen · ⌘S speichert." : "Links schreiben, rechts die Vorlage. Drucken erzeugt ein sauberes DIN-A4."}
         action={
           <div className="flex flex-wrap gap-2">
             {kind === "quote" && id ? (
               <>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => {
-                    const invoice = convertQuoteToInvoice(working.id);
-                    if (invoice) router.push(`/invoices/${invoice.id}`);
-                  }}
-                >
-                  Als Rechnung
-                </button>
+                {working.status === "sent" || working.status === "draft" ? (
+                  <button type="button" className="btn-ghost" onClick={() => { const next = commitDocument({ ...working, status: "accepted" }); setWorking(next); setDirty(false); }}>
+                    Annehmen
+                  </button>
+                ) : null}
+                {working.status === "sent" || working.status === "accepted" ? (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => {
+                      const invoice = convertQuoteToInvoice(working.id);
+                      if (invoice) router.push(`/invoices/${invoice.id}`);
+                    }}
+                  >
+                    Als Rechnung
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="btn-ghost"
@@ -225,6 +268,32 @@ function DocumentEditorForm({
                   Als Vertrag
                 </button>
               </>
+            ) : null}
+            {kind === "invoice" && id && working.status !== "paid" ? (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setDocumentStatus(working.id, "paid");
+                  setWorking({ ...working, status: "paid", paidAt: working.paidAt || new Date().toISOString().slice(0, 10) });
+                  setDirty(false);
+                }}
+              >
+                Bezahlt
+              </button>
+            ) : null}
+            {kind === "contract" && id && working.status !== "signed" && working.status !== "active" ? (
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  const next = commitDocument({ ...working, status: "signed" });
+                  setWorking(next);
+                  setDirty(false);
+                }}
+              >
+                Unterzeichnen
+              </button>
             ) : null}
             {id ? (
               <button
@@ -261,20 +330,25 @@ function DocumentEditorForm({
                 Zahlung erinnern
               </button>
             ) : null}
+            {kind === "quote" && (working.status === "sent" || working.status === "expired") ? (
+              <button type="button" className="btn-ghost" onClick={() => void sendMail("followup")}>
+                Nachfassen
+              </button>
+            ) : null}
             <button type="button" className="btn-ghost" onClick={() => void copyMail()}>
               <Copy size={14} />
               {copied ? "Kopiert" : "E-Mail"}
             </button>
-            <button type="button" className="btn-ghost" onClick={() => void sendMail()}>
+            <button type="button" className="btn-ghost" disabled={sending} onClick={() => void sendMail()}>
               <Send size={14} />
-              {mailFlash || "Senden"}
+              {sending ? "Sendet…" : mailFlash || "Senden"}
             </button>
             <button type="button" className="btn-ghost" onClick={printDoc}>
               <Printer size={14} />
               Drucken
             </button>
             <button type="button" className="btn-primary" onClick={save}>
-              {savedFlash ? "Gespeichert" : "Speichern"}
+              {savedFlash ? "Gespeichert" : dirty ? "Speichern*" : "Speichern"}
             </button>
           </div>
         }
@@ -291,7 +365,10 @@ function DocumentEditorForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <RecipientPicker
               value={working.customerId}
-              onChange={(customer) => setWorking(applyDirectoryCustomer(working, customer))}
+              onChange={(customer) => {
+                setWorking(applyDirectoryCustomer(working, customer));
+                setDirty(true);
+              }}
             />
             <label className="block">
               <span className="mb-1.5 block text-xs text-subtle">Status</span>
@@ -334,6 +411,22 @@ function DocumentEditorForm({
               />
             </label>
             <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">Telefon</span>
+              <input
+                className="field"
+                value={working.customerPhone}
+                onChange={(event) => patch({ customerPhone: event.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">USt-IdNr. Empfänger</span>
+              <input
+                className="field"
+                value={working.customerVatId}
+                onChange={(event) => patch({ customerVatId: event.target.value })}
+              />
+            </label>
+            <label className="block">
               <span className="mb-1.5 block text-xs text-subtle">Nummer</span>
               <input className="field" value={working.number || "Wird beim Speichern vergeben"} readOnly />
             </label>
@@ -343,7 +436,7 @@ function DocumentEditorForm({
                 type="date"
                 className="field"
                 value={working.issueDate}
-                onChange={(event) => patch({ issueDate: event.target.value })}
+                onChange={(event) => patch({ issueDate: event.target.value, serviceDate: working.serviceDate || event.target.value })}
               />
             </label>
             <label className="block">
@@ -355,6 +448,17 @@ function DocumentEditorForm({
                 onChange={(event) => patch({ dueDate: event.target.value })}
               />
             </label>
+            {kind === "invoice" ? (
+              <label className="block">
+                <span className="mb-1.5 block text-xs text-subtle">Leistungsdatum</span>
+                <input
+                  type="date"
+                  className="field"
+                  value={working.serviceDate || working.issueDate}
+                  onChange={(event) => patch({ serviceDate: event.target.value })}
+                />
+              </label>
+            ) : null}
           </div>
 
           <label className="block">
@@ -510,13 +614,30 @@ function DocumentEditorForm({
                 onChange={(event) => patch({ taxRate: Number(event.target.value) })}
               />
             </label>
-            <div className="space-y-1 rounded-md border border-border px-4 py-3 text-[13px]">
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">Nachlass %</span>
+              <input
+                className="field"
+                type="number"
+                min="0"
+                step="0.1"
+                value={working.discountPercent}
+                onChange={(event) => patch({ discountPercent: Number(event.target.value) })}
+              />
+            </label>
+            <div className="space-y-1 rounded-md border border-border px-4 py-3 text-[13px] sm:col-span-2">
               <div className="flex justify-between text-muted">
                 <span>Netto</span>
-                <span className="tabular-nums">{formatMoney(totals.net, working.currency)}</span>
+                <span className="tabular-nums">{formatMoney(totals.subtotal, working.currency)}</span>
               </div>
+              {totals.discount > 0 ? (
+                <div className="flex justify-between text-muted">
+                  <span>Nachlass {totals.discountPercent}%</span>
+                  <span className="tabular-nums">−{formatMoney(totals.discount, working.currency)}</span>
+                </div>
+              ) : null}
               <div className="flex justify-between text-muted">
-                <span>MwSt.</span>
+                <span>MwSt. {working.taxRate}%</span>
                 <span className="tabular-nums">{formatMoney(totals.tax, working.currency)}</span>
               </div>
               <div className="flex justify-between font-medium">
@@ -535,6 +656,31 @@ function DocumentEditorForm({
               onChange={(event) => patch({ notes: event.target.value })}
             />
           </label>
+
+          <dl className="grid gap-2 text-[12px] text-muted sm:grid-cols-2">
+            <div>
+              <dt className="text-subtle">Angelegt</dt>
+              <dd>{formatLongDate(working.createdAt.slice(0, 10))}</dd>
+            </div>
+            {working.sentAt ? (
+              <div>
+                <dt className="text-subtle">Gesendet</dt>
+                <dd>{formatLongDate(working.sentAt.slice(0, 10))}</dd>
+              </div>
+            ) : null}
+            {working.lastMailedAt ? (
+              <div>
+                <dt className="text-subtle">Letzte Mail</dt>
+                <dd>{formatLongDate(working.lastMailedAt.slice(0, 10))}</dd>
+              </div>
+            ) : null}
+            {working.paidAt ? (
+              <div>
+                <dt className="text-subtle">Bezahlt</dt>
+                <dd>{formatLongDate(working.paidAt.slice(0, 10))}</dd>
+              </div>
+            ) : null}
+          </dl>
         </form>
 
         <div className="print-stage">

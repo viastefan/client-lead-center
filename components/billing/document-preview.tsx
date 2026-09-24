@@ -29,6 +29,7 @@ export function DocumentPreview({
   const brand = company.tradeName.trim();
   const legal = company.legalName.trim();
   const showPaymentNote = doc.kind === "invoice" && company.paymentNote && company.paymentNote !== doc.notes;
+  const serviceDate = doc.serviceDate || doc.issueDate;
 
   return (
     <article className={`sheet sheet-${template}`} data-template={template}>
@@ -51,6 +52,8 @@ export function DocumentPreview({
           {doc.customerContact ? <p>{doc.customerContact}</p> : null}
           {doc.customerAddress ? <p className="whitespace-pre-wrap">{doc.customerAddress}</p> : null}
           {doc.customerEmail ? <p>{doc.customerEmail}</p> : null}
+          {doc.customerPhone ? <p>{doc.customerPhone}</p> : null}
+          {doc.customerVatId ? <p>USt-IdNr. {doc.customerVatId}</p> : null}
         </div>
         <div className="sheet-meta">
           <div>
@@ -76,7 +79,13 @@ export function DocumentPreview({
           {doc.kind === "invoice" ? (
             <div>
               <span>Leistungsdatum</span>
-              <strong>{formatLongDate(doc.issueDate)}</strong>
+              <strong>{formatLongDate(serviceDate)}</strong>
+            </div>
+          ) : null}
+          {doc.status === "paid" && doc.paidAt ? (
+            <div>
+              <span>Bezahlt am</span>
+              <strong>{formatLongDate(doc.paidAt.slice(0, 10))}</strong>
             </div>
           ) : null}
         </div>
@@ -113,8 +122,14 @@ export function DocumentPreview({
       <section className="sheet-totals">
         <div>
           <span>Netto</span>
-          <strong>{formatMoney(totals.net, doc.currency)}</strong>
+          <strong>{formatMoney(totals.subtotal, doc.currency)}</strong>
         </div>
+        {totals.discount > 0 ? (
+          <div>
+            <span>Nachlass {totals.discountPercent}%</span>
+            <strong>−{formatMoney(totals.discount, doc.currency)}</strong>
+          </div>
+        ) : null}
         <div>
           <span>MwSt. {doc.taxRate}%</span>
           <strong>{formatMoney(totals.tax, doc.currency)}</strong>

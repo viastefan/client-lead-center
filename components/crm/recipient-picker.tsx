@@ -76,7 +76,8 @@ export function RecipientPicker({
                 >
                   <span className="text-[13px] font-medium">{customer.companyName}</span>
                   <span className="text-[11px] text-muted">
-                    {customer.contactName} · {customer.email} · {sourceLabel(customer.source)}
+                    {customer.contactName} · {customer.email || "ohne Mail"} · {sourceLabel(customer.source)}
+                    {customer.vatId ? ` · ${customer.vatId}` : ""}
                   </span>
                 </button>
               </li>

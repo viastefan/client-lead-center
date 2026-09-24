@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { catalogCustomers } from "./catalog";
 import { mergeDirectory, searchDirectory } from "./directory";
+import { domainFromWebsite } from "./website";
 
 test("directory always includes live websites", () => {
   const rows = mergeDirectory([]);
@@ -27,6 +28,7 @@ test("local wix records overlay catalog by email and stay selectable", () => {
       email: "hallo@studionord.de",
       phone: "",
       address: "",
+      vatId: "",
       domain: "studionord.wixsite.com/home",
       websiteUrl: "https://studionord.wixsite.com/home",
       source: "wix",
@@ -40,4 +42,9 @@ test("local wix records overlay catalog by email and stay selectable", () => {
   const hits = searchDirectory(merged, "wixsite");
   assert.equal(hits.length, 1);
   assert.equal(hits[0]?.source, "wix");
+});
+
+test("website urls become domains", () => {
+  assert.equal(domainFromWebsite("https://www.studionord.wixsite.com/home"), "studionord.wixsite.com");
+  assert.equal(domainFromWebsite("abelen-immobilien.de"), "abelen-immobilien.de");
 });

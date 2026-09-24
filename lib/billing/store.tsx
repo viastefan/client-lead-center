@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from "react";
 import { logOpsEvent } from "@/lib/ops/events";
-import { formatDocumentNumber, isOverdueInvoice } from "./calc";
+import { formatDocumentNumber } from "./calc";
+import { applyDocumentLifecycle, coerceDocument } from "./coerce";
 import { emptyBillingState, newLineItem, STORAGE_KEY } from "./defaults";
 import { kindHref, kindLabel } from "./labels";
 import { newPaymentToken } from "./payment";
@@ -34,6 +35,7 @@ type BillingContextValue = {
   addReminder: (reminder: Omit<Reminder, "id" | "createdAt" | "status"> & { status?: Reminder["status"] }) => Reminder;
   saveReminder: (reminder: Reminder) => void;
   completeReminder: (id: string) => void;
+  replaceBilling: (next: BillingState) => void;
 };
 
 const BillingContext = createContext<BillingContextValue | null>(null);
@@ -48,9 +50,8 @@ function addDays(isoDate: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-function withOverdue(doc: BusinessDocument, asOf = today()): BusinessDocument {
-  if (!isOverdueInvoice(doc, asOf) || doc.status === "overdue") return doc;
-  return { ...doc, status: "overdue" };
+function withLifecycle(doc: BusinessDocument, asOf = today()): BusinessDocument {
+  return applyDocumentLifecycle(doc, asOf);
 }
 
 function prefixFor(company: CompanyProfile, kind: DocumentKind): string {
@@ -76,10 +77,10 @@ function readState(): BillingState {
   const hydrate = (state: BillingState): BillingState => ({
     ...state,
     documents: state.documents.map((doc) =>
-      withOverdue({
+      withLifecycle(coerceDocument({
         ...doc,
         paymentToken: doc.paymentToken || newPaymentToken(),
-      }),
+      })),
     ),
   });
   if (typeof window === "undefined") return hydrate(fallback);
@@ -160,10 +161,13 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           number = formatDocumentNumber(bumped.prefix, year, bumped.sequence);
           nextSequences = bumped.sequences;
         }
-        saved = withOverdue({
+        saved = withLifecycle({
           ...doc,
           number,
           paymentToken: doc.paymentToken || newPaymentToken(),
+          sentAt: doc.status === "sent" || doc.status === "overdue" ? doc.sentAt || new Date().toISOString() : doc.sentAt,
+          paidAt: doc.status === "paid" ? doc.paidAt || today() : doc.paidAt,
+          lastMailedAt: doc.lastMailedAt ?? null,
           updatedAt: new Date().toISOString(),
         });
         return {
@@ -199,14 +203,21 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
         customerContact: "",
         customerEmail: "",
         customerAddress: "",
+        customerVatId: "",
+        customerPhone: "",
         issueDate,
         dueDate: addDays(issueDate, kind === "contract" ? 365 : state.company.paymentDays),
+        serviceDate: issueDate,
         intro: introFor(kind),
         notes: noteFor(state.company, kind),
         taxRate: state.company.taxRate,
+        discountPercent: 0,
         currency: "EUR",
         items: [newLineItem(state.company.defaultUnit)],
         paymentToken: newPaymentToken(),
+        sentAt: null,
+        paidAt: null,
+        lastMailedAt: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         archivedAt: null,
@@ -249,11 +260,29 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       persist((prev) => ({
         ...prev,
         documents: prev.documents.map((item) =>
-          item.id === id ? withOverdue({ ...item, status, updatedAt: new Date().toISOString() }) : item,
+          item.id === id
+            ? withLifecycle({
+                ...item,
+                status,
+                sentAt: status === "sent" || status === "overdue" ? item.sentAt || new Date().toISOString() : item.sentAt,
+                paidAt: status === "paid" ? item.paidAt || today() : item.paidAt,
+                updatedAt: new Date().toISOString(),
+              })
+            : item,
         ),
+        reminders:
+          status === "paid"
+            ? prev.reminders.map((item) => (item.relatedId === id ? { ...item, status: "done" as const } : item))
+            : prev.reminders,
       }));
       if (status === "paid") {
         logOpsEvent({ title: "Rechnung als bezahlt markiert", href: `/invoices/${id}` });
+      }
+      if (status === "accepted") {
+        logOpsEvent({ title: "Angebot angenommen", href: `/quotes/${id}` });
+      }
+      if (status === "signed" || status === "active") {
+        logOpsEvent({ title: "Vertrag unterzeichnet", href: `/contracts/${id}` });
       }
     },
     [persist],
@@ -275,6 +304,9 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           dueDate: addDays(issueDate, source.kind === "contract" ? 365 : prev.company.paymentDays),
           items: source.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
           paymentToken: newPaymentToken(),
+          sentAt: null,
+          paidAt: null,
+          lastMailedAt: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           archivedAt: null,
@@ -304,9 +336,14 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           status: "draft",
           issueDate,
           dueDate: addDays(issueDate, prev.company.paymentDays),
+          serviceDate: issueDate,
           intro: "Rechnung zu Ihrem angenommenen Angebot.",
           notes: prev.company.invoiceNote,
+          items: quote.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
           paymentToken: newPaymentToken(),
+          sentAt: null,
+          paidAt: null,
+          lastMailedAt: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           archivedAt: null,
@@ -347,9 +384,14 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
           status: "draft",
           issueDate,
           dueDate: addDays(issueDate, 365),
+          serviceDate: issueDate,
           intro: "Vertrag zu Ihrem angenommenen Angebot.",
           notes: prev.company.contractNote,
+          items: quote.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
           paymentToken: newPaymentToken(),
+          sentAt: null,
+          paidAt: null,
+          lastMailedAt: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           archivedAt: null,
@@ -430,6 +472,19 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
     [persist],
   );
 
+  const replaceBilling = useCallback(
+    (next: BillingState) => {
+      persist(() => ({
+        version: 2,
+        company: next.company,
+        documents: next.documents.map((doc) => withLifecycle(coerceDocument(doc))),
+        reminders: next.reminders,
+        sequences: next.sequences,
+      }));
+    },
+    [persist],
+  );
+
   const value = useMemo<BillingContextValue>(
     () => ({
       ready,
@@ -450,6 +505,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       addReminder,
       saveReminder,
       completeReminder,
+      replaceBilling,
     }),
     [
       addReminder,
@@ -461,6 +517,7 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       convertQuoteToInvoice,
       duplicateDocument,
       ready,
+      replaceBilling,
       restoreDocument,
       saveCompany,
       saveReminder,

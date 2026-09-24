@@ -27,6 +27,7 @@ export function CustomerEditor({ customer }: { customer: DirectoryCustomer }) {
         <Field label="Ansprechpartner" value={form.contactName} onChange={(value) => patch("contactName", value)} />
         <Field label="E-Mail" value={form.email} onChange={(value) => patch("email", value)} type="email" />
         <Field label="Telefon" value={form.phone} onChange={(value) => patch("phone", value)} />
+        <Field label="USt-IdNr." value={form.vatId} onChange={(value) => patch("vatId", value)} />
         <Field label="Domain" value={form.domain} onChange={(value) => patch("domain", value)} />
         <Field label="Website / Wix-URL" value={form.websiteUrl} onChange={(value) => patch("websiteUrl", value)} />
         <label className="block">

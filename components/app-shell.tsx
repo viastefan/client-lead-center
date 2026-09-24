@@ -25,6 +25,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { CommandPalette } from "@/components/ops/command-palette";
 import { PreviewBanner } from "@/components/preview-banner";
 import { useBilling } from "@/lib/billing/store";
+import { financeSummary } from "@/lib/billing/finance";
 import { buildInbox } from "@/lib/ops/inbox";
 import type { SessionUser } from "@/types";
 
@@ -114,6 +115,16 @@ export function AppShell({
     () => (ready ? buildInbox({ documents, reminders }).length : 0) + leadInbox,
     [documents, leadInbox, ready, reminders],
   );
+  const financeBadge = useMemo((): Record<string, number> => {
+    if (!ready) return {};
+    const summary = financeSummary(documents);
+    const openReminders = reminders.filter((item) => item.status === "open").length;
+    return {
+      "/invoices": summary.overdueCount,
+      "/quotes": summary.sentQuotes,
+      "/reminders": openReminders,
+    };
+  }, [documents, ready, reminders]);
   const initial = (user.profile?.full_name || user.email || "A").slice(0, 1).toUpperCase();
 
   useEffect(() => {
@@ -139,7 +150,7 @@ export function AppShell({
         <NavList items={PRIMARY} pathname={pathname} onNavigate={() => setOpen(false)} badge={{ "/inbox": inboxCount }} />
         <div>
           <p className="kicker mb-1.5 px-2">Finanzen</p>
-          <NavList items={FINANCE} pathname={pathname} onNavigate={() => setOpen(false)} />
+          <NavList items={FINANCE} pathname={pathname} onNavigate={() => setOpen(false)} badge={financeBadge} />
         </div>
         <div>
           <p className="kicker mb-1.5 px-2">System</p>

@@ -49,6 +49,10 @@ function writeLocal(customers: DirectoryCustomer[]) {
   window.dispatchEvent(new Event("clc-crm"));
 }
 
+export function replaceLocalCustomers(customers: DirectoryCustomer[]) {
+  writeLocal(customers.map((row) => coerceDirectoryCustomer(row)));
+}
+
 export function upsertLocalCustomer(
   input: Omit<DirectoryCustomer, "id" | "status"> & { id?: string; status?: DirectoryCustomer["status"] },
 ): DirectoryCustomer {
@@ -61,6 +65,7 @@ export function upsertLocalCustomer(
     email: input.email.trim(),
     phone: input.phone.trim(),
     address: input.address.trim(),
+    vatId: (input.vatId ?? "").trim(),
     domain: input.domain.trim(),
     websiteUrl: input.websiteUrl.trim(),
     source: input.source,

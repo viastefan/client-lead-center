@@ -8,6 +8,7 @@ export type DirectoryCustomer = {
   email: string;
   phone: string;
   address: string;
+  vatId: string;
   domain: string;
   websiteUrl: string;
   source: DirectorySource;
@@ -22,7 +23,7 @@ export function sourceLabel(source: DirectorySource): string {
 }
 
 export function directorySearchHaystack(customer: DirectoryCustomer): string {
-  return `${customer.companyName} ${customer.contactName} ${customer.email} ${customer.domain} ${customer.address} ${customer.websiteUrl}`.toLowerCase();
+  return `${customer.companyName} ${customer.contactName} ${customer.email} ${customer.phone} ${customer.domain} ${customer.address} ${customer.websiteUrl} ${customer.vatId} ${customer.notes}`.toLowerCase();
 }
 
 export function coerceDirectoryCustomer(raw: Partial<DirectoryCustomer> & { id: string; companyName: string }): DirectoryCustomer {
@@ -33,6 +34,7 @@ export function coerceDirectoryCustomer(raw: Partial<DirectoryCustomer> & { id: 
     email: raw.email ?? "",
     phone: raw.phone ?? "",
     address: raw.address ?? "",
+    vatId: raw.vatId ?? "",
     domain: (raw.domain ?? "").replace(/^https?:\/\//, ""),
     websiteUrl: raw.websiteUrl ?? "",
     source: raw.source === "wix" || raw.source === "website" || raw.source === "manual" ? raw.source : "manual",

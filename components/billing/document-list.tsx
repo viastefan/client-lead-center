@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { EntityMark } from "@/components/entity-mark";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { documentTotals, isOverdueInvoice } from "@/lib/billing/calc";
+import { listTotals } from "@/lib/billing/finance";
 import { formatMoney } from "@/lib/billing/format";
 import { kindHref, kindLabel, statusLabel, statusTone } from "@/lib/billing/labels";
 import { useBilling } from "@/lib/billing/store";
@@ -27,7 +29,8 @@ export function DocumentList({
   archived?: boolean;
   customerId?: string;
 }) {
-  const { documents, ready, restoreDocument, setDocumentStatus } = useBilling();
+  const { documents, ready, restoreDocument, setDocumentStatus, convertQuoteToInvoice } = useBilling();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
 
@@ -37,15 +40,15 @@ export function DocumentList({
       .filter((doc) => (kind ? doc.kind === kind : true))
       .filter((doc) => (customerId ? doc.customerId === customerId : true))
       .filter((doc) => {
-        const hay = `${doc.number} ${doc.customerName} ${doc.customerEmail} ${doc.customerContact}`.toLowerCase();
+        const hay = `${doc.number} ${doc.customerName} ${doc.customerEmail} ${doc.customerContact} ${doc.customerVatId}`.toLowerCase();
         return hay.includes(query.trim().toLowerCase());
       })
       .filter((doc) => {
         if (filter === "all") return true;
         if (filter === "draft") return doc.status === "draft";
-        if (filter === "open") return doc.status === "sent" || doc.status === "accepted" || doc.status === "active";
-        if (filter === "overdue") return isOverdueInvoice(doc) || doc.status === "overdue";
-        if (filter === "paid") return doc.status === "paid" || doc.status === "invoiced" || doc.status === "signed";
+        if (filter === "open") return doc.status === "sent" || doc.status === "accepted" || doc.status === "active" || doc.status === "signed";
+        if (filter === "overdue") return isOverdueInvoice(doc) || doc.status === "overdue" || doc.status === "expired";
+        if (filter === "paid") return doc.status === "paid" || doc.status === "invoiced";
         return true;
       })
       .sort((a, b) => (b.issueDate || "").localeCompare(a.issueDate || ""));
@@ -56,11 +59,11 @@ export function DocumentList({
   const description = archived
     ? "Abgelegte Angebote, Rechnungen und Verträge."
     : kind === "quote"
-      ? "Empfänger wählen, senden, dann in Rechnung wandeln."
+      ? "Empfänger wählen, senden, annehmen, dann in Rechnung wandeln."
       : kind === "invoice"
-        ? "Rechnungen mit Empfänger, Zahlungslink, Mahnung und MwSt."
+        ? "Gesendete Rechnungen, Zahlungslink, Mahnung und Bezahlt-Status."
         : kind === "contract"
-          ? "Verträge mit Laufzeit, Empfänger und Erinnerungen."
+          ? "Verträge mit Laufzeit, Unterschrift und Erinnerungen."
           : "Dokumente zu diesem Kunden.";
 
   return (
@@ -79,7 +82,7 @@ export function DocumentList({
         />
       )}
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {FILTERS.map((item) => (
           <button
             key={item.id}
@@ -92,6 +95,11 @@ export function DocumentList({
             {item.label}
           </button>
         ))}
+        {rows.length > 0 ? (
+          <span className="ml-auto text-[12px] tabular-nums text-muted">
+            {rows.length} · {formatMoney(listTotals(rows))}
+          </span>
+        ) : null}
       </div>
       <div className="mb-4 rounded-md border border-border px-3">
         <input
@@ -123,7 +131,7 @@ export function DocumentList({
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
           {rows.map((doc) => {
             const totals = documentTotals(doc);
-            const overdue = isOverdueInvoice(doc) || doc.status === "overdue";
+            const overdue = isOverdueInvoice(doc) || doc.status === "overdue" || doc.status === "expired";
             return (
               <li key={doc.id}>
                 <div className="row rounded-none">
@@ -139,7 +147,7 @@ export function DocumentList({
                       </p>
                     </div>
                     <StatusBadge tone={overdue ? "danger" : statusTone(doc.status as DocumentStatus)}>
-                      {overdue ? "Überfällig" : statusLabel(doc.status)}
+                      {overdue ? (doc.kind === "quote" ? "Abgelaufen" : "Überfällig") : statusLabel(doc.status)}
                     </StatusBadge>
                     <p className="hidden w-24 text-right text-[13px] tabular-nums sm:block">
                       {formatMoney(totals.gross, doc.currency)}
@@ -149,13 +157,24 @@ export function DocumentList({
                     <button type="button" className="btn-ghost shrink-0" onClick={() => restoreDocument(doc.id)}>
                       Zurück
                     </button>
-                  ) : doc.kind === "invoice" && doc.status !== "paid" ? (
+                  ) : doc.kind === "invoice" && doc.status !== "paid" && doc.status !== "draft" ? (
+                    <button type="button" className="btn-ghost shrink-0" onClick={() => setDocumentStatus(doc.id, "paid")}>
+                      Bezahlt
+                    </button>
+                  ) : doc.kind === "quote" && (doc.status === "sent" || doc.status === "accepted") ? (
                     <button
                       type="button"
                       className="btn-ghost shrink-0"
-                      onClick={() => setDocumentStatus(doc.id, "paid")}
+                      onClick={() => {
+                        const invoice = convertQuoteToInvoice(doc.id);
+                        if (invoice) router.push(`/invoices/${invoice.id}`);
+                      }}
                     >
-                      Bezahlt
+                      Rechnung
+                    </button>
+                  ) : doc.kind === "contract" && doc.status !== "signed" && doc.status !== "active" && doc.status !== "draft" ? (
+                    <button type="button" className="btn-ghost shrink-0" onClick={() => setDocumentStatus(doc.id, "signed")}>
+                      Signiert
                     </button>
                   ) : null}
                 </div>

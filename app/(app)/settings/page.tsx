@@ -3,6 +3,7 @@ import { CompanySettingsForm } from "@/components/settings/company-form";
 import { requireSessionUser } from "@/lib/auth/session";
 import { isPreviewMode } from "@/lib/data/workspace";
 import { MailboxForm } from "@/components/settings/mailbox-form";
+import { WorkspaceBackup } from "@/components/settings/workspace-backup";
 import {
   hasClaudeKey,
   hasGoogleOAuth,
@@ -38,6 +39,9 @@ export default async function SettingsPage() {
       <CompanySettingsForm />
       <div className="mt-8">
         <MailboxForm serverConfigured={hasIonosSmtp()} />
+      </div>
+      <div className="mt-8">
+        <WorkspaceBackup />
       </div>
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <Panel title="Konto">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { DocumentList } from "@/components/billing/document-list";
 import { CustomerEditor } from "@/components/crm/customer-editor";
 import { EmptyState, PageHeader, Panel, StatusBadge, StatCard } from "@/components/ui";
@@ -11,6 +11,9 @@ import { useBilling } from "@/lib/billing/store";
 import { coerceDirectoryCustomer, sourceLabel, type DirectoryCustomer } from "@/lib/crm/types";
 import { findDirectoryCustomer } from "@/lib/crm/directory";
 import { useDirectory } from "@/lib/crm/use-directory";
+import { websiteHref } from "@/lib/crm/website";
+import { mailboxPayload } from "@/lib/email/mailbox-client";
+import { htmlFromText } from "@/lib/email/html";
 
 function subscribeReady(onStoreChange: () => void) {
   queueMicrotask(onStoreChange);
@@ -43,7 +46,10 @@ export function CustomerWorkspace({
 }) {
   const ready = useSyncExternalStore(subscribeReady, () => true, () => false);
   const directory = useDirectory(seed ? [seed] : []);
-  const { documents, ready: billingReady } = useBilling();
+  const { documents, company, ready: billingReady } = useBilling();
+  const [mailNote, setMailNote] = useState("");
+  const [mailFlash, setMailFlash] = useState("");
+  const [sending, setSending] = useState(false);
   const customer = useMemo(
     () => findDirectoryCustomer(directory, id) ?? (seed ? coerceDirectoryCustomer(seed) : undefined),
     [directory, id, seed],
@@ -65,7 +71,35 @@ export function CustomerWorkspace({
     );
   }
 
-  const siteHref = customer.websiteUrl || (customer.domain ? `https://${customer.domain.replace(/^https?:\/\//, "")}` : "");
+  const siteHref = websiteHref(customer);
+
+  async function sendNote() {
+    if (!customer?.email) {
+      setMailFlash("Keine E-Mail");
+      window.setTimeout(() => setMailFlash(""), 1600);
+      return;
+    }
+    setSending(true);
+    const text = `Guten Tag ${customer.contactName || customer.companyName},\n\n${mailNote.trim() || "kurze Rückmeldung zu Ihrem Auftrag."}\n\n${company.legalName}\n${company.street}\n${company.zip} ${company.city}`.trim();
+    const response = await fetch("/api/mail", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(
+        mailboxPayload({
+          to: customer.email,
+          subject: `${customer.companyName} – kurze Nachricht`,
+          text,
+          html: htmlFromText(text, company.legalName),
+          fromName: company.legalName,
+        }),
+      ),
+    });
+    const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
+    setSending(false);
+    setMailFlash(payload.success ? "Gesendet" : payload.error?.message || "Fehler");
+    if (payload.success) setMailNote("");
+    window.setTimeout(() => setMailFlash(""), 2200);
+  }
 
   return (
     <>
@@ -83,6 +117,11 @@ export function CustomerWorkspace({
             <Link href={`/contracts/new?customer=${customer.id}`} className="btn-ghost">
               Vertrag
             </Link>
+            {customer.phone ? (
+              <a href={`tel:${customer.phone}`} className="btn-ghost">
+                Anrufen
+              </a>
+            ) : null}
             {siteHref ? (
               <a href={siteHref} className="btn-ghost" target="_blank" rel="noreferrer">
                 Website
@@ -96,13 +135,13 @@ export function CustomerWorkspace({
       {ledger ? (
         <div className="mb-6 grid gap-3 sm:grid-cols-3">
           <StatCard label="Offen" value={formatMoney(ledger.openAmount)} hint={`${ledger.invoices} Rechnungen`} />
-          <StatCard label="Überfällig" value={formatMoney(ledger.overdueAmount)} hint="Noch nicht bezahlt" />
+          <StatCard label="Überfällig" value={formatMoney(ledger.overdueAmount)} hint="Gesendet, nicht bezahlt" />
           <StatCard label="Bezahlt" value={formatMoney(ledger.paidAmount)} hint={`${ledger.quotes} Angebote · ${ledger.contracts} Verträge`} />
         </div>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Panel title="Stammdaten" description="Adresse und Mail gelten als Empfänger auf Angebot, Rechnung und Vertrag.">
+        <Panel title="Stammdaten" description="Adresse, USt-IdNr. und Mail gelten als Empfänger auf Angebot, Rechnung und Vertrag.">
           <CustomerEditor key={`${customer.id}-${customer.email}`} customer={customer} />
         </Panel>
         <div className="space-y-6">
@@ -125,6 +164,21 @@ export function CustomerWorkspace({
                 ) : null}
               </ul>
             )}
+          </Panel>
+          <Panel title="Kurze Mail">
+            <textarea
+              rows={3}
+              className="field h-auto py-2"
+              placeholder="Text an den Empfänger…"
+              value={mailNote}
+              onChange={(event) => setMailNote(event.target.value)}
+            />
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-muted">{customer.email || "Keine E-Mail hinterlegt"}</p>
+              <button type="button" className="btn-ghost" disabled={sending || !customer.email} onClick={() => void sendNote()}>
+                {sending ? "Sendet…" : mailFlash || "Senden"}
+              </button>
+            </div>
           </Panel>
           <Panel
             title="Leads"

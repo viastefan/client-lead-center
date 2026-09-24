@@ -13,6 +13,7 @@ export function catalogCustomers(): DirectoryCustomer[] {
     email: site.contactEmail,
     phone: "",
     address: "",
+    vatId: "",
     domain: site.domain,
     websiteUrl: site.vercelUrl,
     source: "website",

@@ -30,7 +30,7 @@ export function derivedReminders(
         createdAt: doc.updatedAt,
       });
     }
-    if (doc.kind === "quote" && (doc.status === "sent" || doc.status === "draft") && doc.dueDate && doc.dueDate <= soon) {
+    if (doc.kind === "quote" && (doc.status === "sent" || doc.status === "expired") && doc.dueDate && doc.dueDate <= soon) {
       rows.push({
         id: `derived-quote-${doc.id}`,
         title: `Angebot nachfassen ${doc.number}`,

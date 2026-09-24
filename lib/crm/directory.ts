@@ -18,6 +18,7 @@ function mergeRecord(base: DirectoryCustomer, overlay: DirectoryCustomer): Direc
     id: base.id,
     address: overlay.address || base.address,
     phone: overlay.phone || base.phone,
+    vatId: overlay.vatId || base.vatId,
     notes: overlay.notes || base.notes,
     websiteUrl: overlay.websiteUrl || base.websiteUrl,
     contactName: overlay.contactName || base.contactName,

@@ -18,7 +18,7 @@ export function OpenReceivables() {
   return (
     <Panel
       title="Offene Rechnungen"
-      description="Fällig, überfällig oder noch Entwurf."
+      description="Fällig oder überfällig — Entwürfe zählen nicht als Forderung."
       action={
         <Link href="/invoices" className="text-[12px] text-muted hover:text-foreground">
           Alle

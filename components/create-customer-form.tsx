@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sourceFromForm, upsertLocalCustomer } from "@/lib/crm/store";
 import type { DirectorySource } from "@/lib/crm/types";
+import { domainFromWebsite } from "@/lib/crm/website";
 
 export function CreateCustomerForm() {
   const router = useRouter();
@@ -24,14 +25,17 @@ export function CreateCustomerForm() {
           return;
         }
         setPending(true);
+        const websiteUrl = String(data.get("websiteUrl") || data.get("domain") || "").trim();
+        const domain = String(data.get("domain") || "").trim() || domainFromWebsite(websiteUrl);
         const saved = upsertLocalCustomer({
           companyName,
           contactName: String(data.get("contactName") || companyName).trim(),
           email,
           phone: String(data.get("contactPhone") || "").trim(),
           address: String(data.get("address") || "").trim(),
-          domain: String(data.get("domain") || "").trim(),
-          websiteUrl: String(data.get("websiteUrl") || data.get("domain") || "").trim(),
+          vatId: String(data.get("vatId") || "").trim(),
+          domain,
+          websiteUrl,
           source: sourceFromForm(String(data.get("source") || source)),
           notes: String(data.get("notes") || "").trim(),
         });
@@ -56,6 +60,7 @@ export function CreateCustomerForm() {
       <Field name="contactName" label="Ansprechpartner" required />
       <Field name="contactEmail" label="E-Mail (Empfänger)" type="email" required />
       <Field name="contactPhone" label="Telefon" />
+      <Field name="vatId" label="USt-IdNr." />
       <Field name="domain" label={source === "wix" ? "Wix-Domain" : "Website-Domain"} />
       <Field name="websiteUrl" label="Website-URL" />
       <Field name="address" label="Adresse (für Angebot & Rechnung)" />

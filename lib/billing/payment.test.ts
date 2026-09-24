@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { DEFAULT_COMPANY } from "./defaults";
+import { coerceDocument } from "./coerce";
 import {
   decodePaymentSnapshot,
   encodePaymentSnapshot,
@@ -9,9 +10,8 @@ import {
   paymentSnapshotFor,
   snapshotFromBillingJson,
 } from "./payment";
-import type { BusinessDocument } from "./types";
 
-const doc: BusinessDocument = {
+const doc = coerceDocument({
   id: "doc-1",
   kind: "invoice",
   number: "RE-2026-0001",
@@ -24,17 +24,12 @@ const doc: BusinessDocument = {
   customerAddress: "München",
   issueDate: "2026-09-17",
   dueDate: "2026-10-01",
-  intro: "",
-  notes: "",
   taxRate: 19,
-  currency: "EUR",
   items: [{ id: "i1", title: "Betreuung", description: "", qty: 1, unit: "Monat", unitPrice: 100 }],
   paymentToken: "paytoken01",
   createdAt: "2026-09-17T09:00:00.000Z",
   updatedAt: "2026-09-17T09:00:00.000Z",
-  archivedAt: null,
-  convertedFromId: null,
-};
+});
 
 test("payment snapshots round-trip through the public link", () => {
   const snapshot = paymentSnapshotFor(doc, {

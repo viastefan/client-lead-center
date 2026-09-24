@@ -29,4 +29,18 @@ export const SERVICE_PRESETS: Array<Omit<LineItem, "id">> = [
     unit: "Pauschale",
     unitPrice: 90,
   },
+  {
+    title: "Beratung",
+    description: "Abstimmung, Konzept und nächste Schritte.",
+    qty: 1,
+    unit: "Stunde",
+    unitPrice: 95,
+  },
+  {
+    title: "Inhalte / Texte",
+    description: "Seiten, Formulare und bestehende Texte aktualisieren.",
+    qty: 1,
+    unit: "Paket",
+    unitPrice: 160,
+  },
 ];
