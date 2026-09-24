@@ -6,7 +6,7 @@ export function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export function htmlFromText(text: string, kicker = "Client Lead Center"): string {
+export function htmlFromText(text: string, kicker = "Stefan Dirnberger"): string {
   const paragraphs = escapeHtml(text)
     .split(/\n{2,}/)
     .map(

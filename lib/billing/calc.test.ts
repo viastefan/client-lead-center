@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { documentTotals, formatDocumentNumber, isOverdueInvoice, lineNet, round2 } from "./calc";
+import { documentTotals, formatDocumentNumber, isOpenReceivable, isOverdueInvoice, lineNet, round2 } from "./calc";
 
 test("line and document totals use German tax math", () => {
   assert.equal(lineNet({ qty: 2, unitPrice: 19.9 }), 39.8);
@@ -31,4 +31,25 @@ test("invoices become overdue after the due date", () => {
     isOverdueInvoice({ kind: "quote", status: "sent", dueDate: "2026-09-01", archivedAt: null }, "2026-09-17"),
     false,
   );
+  assert.equal(
+    isOverdueInvoice({ kind: "invoice", status: "draft", dueDate: "2026-09-01", archivedAt: null }, "2026-09-17"),
+    false,
+  );
+  assert.equal(
+    isOpenReceivable({ kind: "invoice", status: "draft", archivedAt: null }),
+    false,
+  );
+});
+
+test("discount reduces net before VAT", () => {
+  const totals = documentTotals({
+    taxRate: 19,
+    discountPercent: 10,
+    items: [{ id: "1", title: "A", description: "", qty: 1, unit: "x", unitPrice: 100 }],
+  });
+  assert.equal(totals.subtotal, 100);
+  assert.equal(totals.discount, 10);
+  assert.equal(totals.net, 90);
+  assert.equal(totals.tax, 17.1);
+  assert.equal(totals.gross, 107.1);
 });

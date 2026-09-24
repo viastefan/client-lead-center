@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { documentTotals, isOpenReceivable } from "@/lib/billing/calc";
+import { financeSummary } from "@/lib/billing/finance";
 import { formatMoney } from "@/lib/billing/format";
 import { useBilling } from "@/lib/billing/store";
 import { StatCard } from "@/components/ui";
@@ -9,19 +9,7 @@ import { StatCard } from "@/components/ui";
 export function FinancePulse() {
   const { documents, ready } = useBilling();
   if (!ready) return null;
-
-  const quotes = documents.filter((doc) => doc.kind === "quote" && !doc.archivedAt);
-  const invoices = documents.filter((doc) => doc.kind === "invoice" && !doc.archivedAt);
-  const contracts = documents.filter((doc) => doc.kind === "contract" && !doc.archivedAt);
-  const openQuotes = quotes
-    .filter((doc) => doc.status === "sent" || doc.status === "draft")
-    .reduce((sum, doc) => sum + documentTotals(doc).gross, 0);
-  const openInvoices = invoices
-    .filter((doc) => isOpenReceivable(doc))
-    .reduce((sum, doc) => sum + documentTotals(doc).gross, 0);
-  const paid = invoices
-    .filter((doc) => doc.status === "paid")
-    .reduce((sum, doc) => sum + documentTotals(doc).gross, 0);
+  const summary = financeSummary(documents);
 
   return (
     <div className="mb-6">
@@ -32,10 +20,10 @@ export function FinancePulse() {
         </Link>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Offene Angebote" value={formatMoney(openQuotes)} hint={`${quotes.length} aktiv`} />
-        <StatCard label="Offene Rechnungen" value={formatMoney(openInvoices)} hint="Noch nicht bezahlt" />
-        <StatCard label="Bezahlt" value={formatMoney(paid)} hint="Markiert als bezahlt" />
-        <StatCard label="Verträge" value={String(contracts.length)} hint="Laufend" />
+        <StatCard label="Offene Angebote" value={formatMoney(summary.openQuoteAmount)} hint={`${summary.quotes} aktiv · ${summary.sentQuotes} unterwegs`} />
+        <StatCard label="Offene Rechnungen" value={formatMoney(summary.openInvoiceAmount)} hint={summary.overdueCount ? `${summary.overdueCount} überfällig` : "Gesendet, noch offen"} />
+        <StatCard label="Bezahlt" value={formatMoney(summary.paidAmount)} hint={`Diesen Monat ${formatMoney(summary.paidThisMonth)}`} />
+        <StatCard label="Verträge" value={String(summary.contracts)} hint={`${summary.activeContracts} laufend`} />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ export const metadata = { title: "Neuer Kunde" };
 export default function NewClientPage() {
   return (
     <>
-      <PageHeader title="Neuer Kunde" description="Manuell anlegen. Live-Vercel-Sites besser über Verbindungen anbinden." />
+      <PageHeader title="Neuer Empfänger" description="Wix, Website oder manuell. Der Kontakt steht danach in der Empfängerwahl für Angebot, Rechnung und Vertrag." />
       <CreateCustomerForm />
     </>
   );

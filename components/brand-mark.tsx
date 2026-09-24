@@ -1,9 +1,14 @@
+import { brandDots } from "@/lib/brand/mark";
+
 export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
-  const box = size === "sm" ? "h-6 w-6 text-[10px]" : "h-7 w-7 text-[11px]";
+  const px = size === "sm" ? 22 : 28;
+  const dots = brandDots(32);
 
   return (
-    <span className={`flex ${box} items-center justify-center rounded-md bg-white font-semibold text-black`}>
-      C
-    </span>
+    <svg width={px} height={px} viewBox="0 0 32 32" fill="none" aria-hidden className="text-foreground">
+      {dots.map((dot, index) => (
+        <circle key={index} cx={dot.x} cy={dot.y} r={dot.r} fill="currentColor" />
+      ))}
+    </svg>
   );
 }

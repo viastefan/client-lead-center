@@ -19,7 +19,7 @@ export default async function PayPage({
     <main className="mx-auto flex min-h-full max-w-md flex-col justify-center px-4 py-16">
       <div className="mb-6 flex items-center gap-2">
         <BrandMark size="sm" />
-        <p className="text-[13px] text-muted">Client Lead Center</p>
+        <p className="text-[13px] text-muted">{snapshot?.legalName || "Stefan Dirnberger"}</p>
       </div>
       <PaymentCard token={token} snapshot={snapshot} />
     </main>

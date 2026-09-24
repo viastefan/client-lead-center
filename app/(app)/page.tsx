@@ -3,6 +3,7 @@ import { EmptyState, PageHeader, Panel, StatusBadge, StatusDot } from "@/compone
 import { AttentionList } from "@/components/ops/attention-list";
 import { MonitorStrip } from "@/components/ops/monitor-strip";
 import { FinancePulse } from "@/components/billing/finance-pulse";
+import { OpenReceivables } from "@/components/billing/open-receivables";
 import { RecentDocuments } from "@/components/billing/recent-documents";
 import { ActivityLog } from "@/components/ops/activity-log";
 import { loadDashboardStats, loadLeads } from "@/lib/data/workspace";
@@ -53,17 +54,17 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={greeting()}
-        description="Eine Inbox. Acht Sites. Finanzen und Leads in einer Linie."
+        description="Angebote, Rechnungen und Empfänger. Sites und Leads laufen daneben."
         action={
           <div className="flex flex-wrap gap-2">
-            <Link href="/emails" className="btn-ghost">
-              Rundmail
+            <Link href="/clients" className="btn-ghost">
+              Kunden
             </Link>
-            <Link href="/monitor" className="btn-ghost">
-              Überwachung
-            </Link>
-            <Link href="/quotes/new" className="btn-primary">
+            <Link href="/quotes/new" className="btn-ghost">
               Angebot
+            </Link>
+            <Link href="/invoices/new" className="btn-primary">
+              Rechnung
             </Link>
           </div>
         }
@@ -74,6 +75,9 @@ export default async function DashboardPage() {
         <AttentionList leads={inboxLeads} />
       </div>
       <FinancePulse />
+      <div className="mb-6">
+        <OpenReceivables />
+      </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         <div className="space-y-6">

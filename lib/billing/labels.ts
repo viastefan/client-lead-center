@@ -6,6 +6,12 @@ export function kindLabel(kind: DocumentKind): string {
   return "Vertrag";
 }
 
+export function newKindTitle(kind: DocumentKind): string {
+  if (kind === "quote") return "Neues Angebot";
+  if (kind === "invoice") return "Neue Rechnung";
+  return "Neuer Vertrag";
+}
+
 export function kindHref(kind: DocumentKind): "/quotes" | "/invoices" | "/contracts" {
   if (kind === "quote") return "/quotes";
   if (kind === "invoice") return "/invoices";
@@ -56,7 +62,7 @@ export const TEMPLATE_META: Record<TemplateId, { name: string; note: string }> =
   noir: { name: "Noir", note: "Dunkles Studio, 2030, für den Screen." },
 };
 
-export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "invoiced"] as const;
+export const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined", "invoiced", "expired"] as const;
 export const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue"] as const;
 export const CONTRACT_STATUSES = ["draft", "sent", "signed", "active", "expired", "cancelled"] as const;
 

@@ -93,14 +93,21 @@ export type BusinessDocument = {
   customerContact: string;
   customerEmail: string;
   customerAddress: string;
+  customerVatId: string;
+  customerPhone: string;
   issueDate: string;
   dueDate: string;
+  serviceDate: string;
   intro: string;
   notes: string;
   taxRate: number;
+  discountPercent: number;
   currency: "EUR";
   items: LineItem[];
   paymentToken: string;
+  sentAt: string | null;
+  paidAt: string | null;
+  lastMailedAt: string | null;
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
@@ -108,7 +115,7 @@ export type BusinessDocument = {
 };
 
 export type BillingState = {
-  version: 1;
+  version: 2;
   company: CompanyProfile;
   documents: BusinessDocument[];
   reminders: Reminder[];

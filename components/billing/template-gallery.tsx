@@ -2,15 +2,15 @@
 
 import { DocumentPreview } from "@/components/billing/document-preview";
 import { TEMPLATE_META } from "@/lib/billing/labels";
+import { coerceDocument } from "@/lib/billing/coerce";
 import { useBilling } from "@/lib/billing/store";
-import type { BusinessDocument, TemplateId } from "@/lib/billing/types";
+import type { TemplateId } from "@/lib/billing/types";
 
-const SAMPLE: Omit<BusinessDocument, "templateId"> = {
+const SAMPLE = coerceDocument({
   id: "template-sample",
   kind: "invoice",
   number: "RE-2026-0000",
   status: "draft",
-  customerId: "",
   customerName: "Beispiel GmbH",
   customerContact: "Anna Keller",
   customerEmail: "anna@example.de",
@@ -20,7 +20,6 @@ const SAMPLE: Omit<BusinessDocument, "templateId"> = {
   intro: "Rechnung für erbrachte Leistungen.",
   notes: "Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer.",
   taxRate: 19,
-  currency: "EUR",
   items: [
     {
       id: "sample-1",
@@ -33,10 +32,8 @@ const SAMPLE: Omit<BusinessDocument, "templateId"> = {
   ],
   createdAt: "2026-09-17T09:00:00.000Z",
   updatedAt: "2026-09-17T09:00:00.000Z",
-  archivedAt: null,
-  convertedFromId: null,
   paymentToken: "paysample01",
-};
+});
 
 export function TemplateGallery({
   value,

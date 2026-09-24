@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBilling } from "@/lib/billing/store";
-import { demoCustomers } from "@/lib/demo/workspace";
+import { useDirectory } from "@/lib/crm/use-directory";
 import { kindHref, kindLabel } from "@/lib/billing/labels";
 
 const ROUTES = [
@@ -27,7 +27,7 @@ export function CommandPalette() {
   const { documents, ready } = useBilling();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const customers = demoCustomers();
+  const customers = useDirectory();
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -63,9 +63,9 @@ export function CommandPalette() {
           }))
       : [];
     const people = customers
-      .filter((customer) => !q || customer.company_name.toLowerCase().includes(q))
+      .filter((customer) => !q || `${customer.companyName} ${customer.email}`.toLowerCase().includes(q))
       .slice(0, 5)
-      .map((customer) => ({ href: `/clients/${customer.id}`, label: customer.company_name }));
+      .map((customer) => ({ href: `/clients/${customer.id}`, label: customer.companyName }));
     return [...routes, ...docs, ...people].slice(0, 12);
   }, [customers, documents, query, ready]);
 

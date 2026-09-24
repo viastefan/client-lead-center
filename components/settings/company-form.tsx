@@ -41,8 +41,8 @@ export function CompanySettingsForm() {
     >
       <Panel title="Unternehmen" description="Erscheint auf jedem Angebot und jeder Rechnung.">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Firma" value={working.legalName} onChange={(value) => patch("legalName", value)} />
-          <Field label="Auftritt" value={working.tradeName} onChange={(value) => patch("tradeName", value)} />
+          <Field label="Name" value={working.legalName} onChange={(value) => patch("legalName", value)} />
+          <Field label="Auftritt (optional)" value={working.tradeName} onChange={(value) => patch("tradeName", value)} />
           <Field label="Inhaber" value={working.ownerName} onChange={(value) => patch("ownerName", value)} />
           <Field label="E-Mail" value={working.email} onChange={(value) => patch("email", value)} type="email" />
           <Field label="Telefon" value={working.phone} onChange={(value) => patch("phone", value)} />
@@ -58,7 +58,7 @@ export function CompanySettingsForm() {
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="USt-IdNr." value={working.vatId} onChange={(value) => patch("vatId", value)} />
           <Field label="Steuernummer" value={working.taxNumber} onChange={(value) => patch("taxNumber", value)} />
-          <Field label="Handelsregister" value={working.register} onChange={(value) => patch("register", value)} />
+          <Field label="Gewerbe / Aktenzeichen" value={working.register} onChange={(value) => patch("register", value)} />
           <Field label="Bank" value={working.bankName} onChange={(value) => patch("bankName", value)} />
           <Field label="IBAN" value={working.iban} onChange={(value) => patch("iban", value)} />
           <Field label="BIC" value={working.bic} onChange={(value) => patch("bic", value)} />

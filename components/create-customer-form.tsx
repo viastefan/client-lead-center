@@ -1,35 +1,76 @@
 "use client";
 
-import { useActionState } from "react";
-import { createCustomerAction, type ActionState } from "@/lib/actions";
-
-const initial: ActionState = {};
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { sourceFromForm, upsertLocalCustomer } from "@/lib/crm/store";
+import type { DirectorySource } from "@/lib/crm/types";
+import { domainFromWebsite } from "@/lib/crm/website";
 
 export function CreateCustomerForm() {
-  const [state, action, pending] = useActionState(createCustomerAction, initial);
+  const router = useRouter();
+  const [source, setSource] = useState<DirectorySource>("wix");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
 
   return (
-    <form action={action} className="max-w-xl space-y-5">
-      <Field name="companyName" label="Firmenname" required />
-      <Field name="name" label="Kurzname" required />
+    <form
+      className="max-w-xl space-y-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        const companyName = String(data.get("companyName") || "").trim();
+        const email = String(data.get("contactEmail") || "").trim();
+        if (!companyName || !email) {
+          setError("Firma und E-Mail sind Pflicht.");
+          return;
+        }
+        setPending(true);
+        const websiteUrl = String(data.get("websiteUrl") || data.get("domain") || "").trim();
+        const domain = String(data.get("domain") || "").trim() || domainFromWebsite(websiteUrl);
+        const saved = upsertLocalCustomer({
+          companyName,
+          contactName: String(data.get("contactName") || companyName).trim(),
+          email,
+          phone: String(data.get("contactPhone") || "").trim(),
+          address: String(data.get("address") || "").trim(),
+          vatId: String(data.get("vatId") || "").trim(),
+          domain,
+          websiteUrl,
+          source: sourceFromForm(String(data.get("source") || source)),
+          notes: String(data.get("notes") || "").trim(),
+        });
+        router.push(`/clients/${saved.id}`);
+        router.refresh();
+      }}
+    >
+      <label className="block">
+        <span className="mb-2 block text-sm text-muted">Quelle</span>
+        <select
+          name="source"
+          className="field"
+          value={source}
+          onChange={(event) => setSource(event.target.value as DirectorySource)}
+        >
+          <option value="wix">Wix</option>
+          <option value="website">Website</option>
+          <option value="manual">Manuell</option>
+        </select>
+      </label>
+      <Field name="companyName" label="Firma" required />
       <Field name="contactName" label="Ansprechpartner" required />
-      <Field name="contactEmail" label="E-Mail" type="email" required />
+      <Field name="contactEmail" label="E-Mail (Empfänger)" type="email" required />
       <Field name="contactPhone" label="Telefon" />
+      <Field name="vatId" label="USt-IdNr." />
+      <Field name="domain" label={source === "wix" ? "Wix-Domain" : "Website-Domain"} />
+      <Field name="websiteUrl" label="Website-URL" />
+      <Field name="address" label="Adresse (für Angebot & Rechnung)" />
       <label className="block">
         <span className="mb-2 block text-sm text-muted">Notizen</span>
-        <textarea
-          name="notes"
-          rows={4}
-          className="field h-auto py-2"
-        />
+        <textarea name="notes" rows={3} className="field h-auto py-2" />
       </label>
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="btn-primary"
-      >
-        {pending ? "Speichern…" : "Kunde anlegen"}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      <button type="submit" disabled={pending} className="btn-primary">
+        {pending ? "Speichern…" : "In Kundendatenbank legen"}
       </button>
     </form>
   );
@@ -49,12 +90,7 @@ function Field({
   return (
     <label className="block">
       <span className="mb-2 block text-sm text-muted">{label}</span>
-      <input
-        name={name}
-        type={type}
-        required={required}
-        className="field"
-      />
+      <input name={name} type={type} required={required} className="field" />
     </label>
   );
 }

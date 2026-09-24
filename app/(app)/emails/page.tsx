@@ -26,7 +26,7 @@ export default async function EmailsPage({
     <>
       <PageHeader
         title="E-Mail"
-        description="Postfach verbinden, dann Rundmails an alle Kunden. Jede Adresse einzeln über die Mail-API."
+        description="Postfach verbinden, dann Rundmails. Rechnungen gehen an den Empfänger aus der Kundendatenbank."
       />
       <BroadcastBoard recipients={recipients} presetId={presetId} />
       <div className="mt-6">

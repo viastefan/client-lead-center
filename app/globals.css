@@ -240,6 +240,12 @@ pre {
   letter-spacing: -0.04em;
 }
 
+.sheet-sender {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #6d7380;
+}
+
 .sheet-kind {
   text-align: right;
 }
