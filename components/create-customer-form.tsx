@@ -31,6 +31,7 @@ export function CreateCustomerForm() {
           phone: String(data.get("contactPhone") || "").trim(),
           address: String(data.get("address") || "").trim(),
           domain: String(data.get("domain") || "").trim(),
+          websiteUrl: String(data.get("websiteUrl") || data.get("domain") || "").trim(),
           source: sourceFromForm(String(data.get("source") || source)),
           notes: String(data.get("notes") || "").trim(),
         });
@@ -55,7 +56,8 @@ export function CreateCustomerForm() {
       <Field name="contactName" label="Ansprechpartner" required />
       <Field name="contactEmail" label="E-Mail (Empfänger)" type="email" required />
       <Field name="contactPhone" label="Telefon" />
-      <Field name="domain" label={source === "wix" ? "Wix-Domain oder URL" : "Website-Domain"} />
+      <Field name="domain" label={source === "wix" ? "Wix-Domain" : "Website-Domain"} />
+      <Field name="websiteUrl" label="Website-URL" />
       <Field name="address" label="Adresse (für Angebot & Rechnung)" />
       <label className="block">
         <span className="mb-2 block text-sm text-muted">Notizen</span>

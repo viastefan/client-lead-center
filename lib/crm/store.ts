@@ -1,4 +1,4 @@
-import type { DirectoryCustomer, DirectorySource } from "./types";
+import { coerceDirectoryCustomer, type DirectoryCustomer, type DirectorySource } from "./types";
 import { mergeDirectory } from "./directory";
 
 export const CRM_KEY = "clc.crm.v1";
@@ -11,7 +11,9 @@ function parse(raw: string | null): DirectoryCustomer[] {
   try {
     const parsed = JSON.parse(raw) as CrmState;
     if (parsed.version !== 1 || !Array.isArray(parsed.customers)) return EMPTY_LOCAL;
-    return parsed.customers;
+    return parsed.customers
+      .filter((row) => row && typeof row.id === "string" && typeof row.companyName === "string")
+      .map((row) => coerceDirectoryCustomer(row));
   } catch {
     return EMPTY_LOCAL;
   }
@@ -52,18 +54,19 @@ export function upsertLocalCustomer(
 ): DirectoryCustomer {
   const current = readLocalCustomers();
   const id = input.id ?? crypto.randomUUID();
-  const next: DirectoryCustomer = {
+  const next = coerceDirectoryCustomer({
     id,
     companyName: input.companyName.trim(),
     contactName: input.contactName.trim() || input.companyName.trim(),
     email: input.email.trim(),
     phone: input.phone.trim(),
     address: input.address.trim(),
-    domain: input.domain.trim().replace(/^https?:\/\//, ""),
+    domain: input.domain.trim(),
+    websiteUrl: input.websiteUrl.trim(),
     source: input.source,
     notes: input.notes.trim(),
     status: input.status ?? "active",
-  };
+  });
   const exists = current.some((item) => item.id === id);
   writeLocal(exists ? current.map((item) => (item.id === id ? next : item)) : [next, ...current]);
   return next;

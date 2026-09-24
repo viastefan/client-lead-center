@@ -4,12 +4,16 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { EntityMark } from "@/components/entity-mark";
 import { EmptyState, StatusBadge } from "@/components/ui";
+import { customerLedger } from "@/lib/billing/customer-finance";
+import { formatMoney } from "@/lib/billing/format";
+import { useBilling } from "@/lib/billing/store";
 import { searchDirectory } from "@/lib/crm/directory";
 import { useDirectory } from "@/lib/crm/use-directory";
 import { sourceLabel, type DirectoryCustomer } from "@/lib/crm/types";
 
 export function CustomerBoard({ serverCustomers = [] }: { serverCustomers?: DirectoryCustomer[] }) {
   const customers = useDirectory(serverCustomers);
+  const { documents, ready } = useBilling();
   const [query, setQuery] = useState("");
   const rows = useMemo(() => searchDirectory(customers, query), [customers, query]);
 
@@ -47,6 +51,9 @@ export function CustomerBoard({ serverCustomers = [] }: { serverCustomers?: Dire
                     </p>
                   </div>
                   <p className="hidden max-w-[180px] truncate text-[12px] text-muted sm:block">{customer.domain}</p>
+                  <p className="hidden w-20 text-right text-[12px] tabular-nums text-muted sm:block">
+                    {ready ? formatMoney(customerLedger(documents, customer.id).openAmount) : ""}
+                  </p>
                   <StatusBadge>{sourceLabel(customer.source)}</StatusBadge>
                 </Link>
                 <Link href={`/quotes/new?customer=${customer.id}`} className="btn-ghost shrink-0">

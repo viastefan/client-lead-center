@@ -7,7 +7,7 @@ test("directory always includes live websites", () => {
   const rows = mergeDirectory([]);
   assert.ok(rows.length >= 8);
   assert.ok(rows.some((row) => row.email === "info@abelen-immobilien.de"));
-  assert.ok(rows.every((row) => row.source === "website"));
+  assert.ok(rows.some((row) => row.websiteUrl.includes("vercel.app")));
 });
 
 test("local wix records overlay catalog by email and stay selectable", () => {
@@ -28,6 +28,7 @@ test("local wix records overlay catalog by email and stay selectable", () => {
       phone: "",
       address: "",
       domain: "studionord.wixsite.com/home",
+      websiteUrl: "https://studionord.wixsite.com/home",
       source: "wix",
       notes: "",
       status: "active",

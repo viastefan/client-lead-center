@@ -7,7 +7,8 @@ import { Copy, Link2, Plus, Printer, Send, Trash2 } from "lucide-react";
 import { DocumentPreview } from "@/components/billing/document-preview";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { documentTotals, lineNet } from "@/lib/billing/calc";
-import { formatMoney, interpolateTemplate } from "@/lib/billing/format";
+import { documentCorrespondence } from "@/lib/billing/correspondence";
+import { formatMoney } from "@/lib/billing/format";
 import { CONTRACT_STATUSES, INVOICE_STATUSES, QUOTE_STATUSES, TEMPLATE_META, dateFieldLabel, kindHref, kindLabel, newKindTitle, statusLabel } from "@/lib/billing/labels";
 import { paymentSnapshotFor, paymentUrl } from "@/lib/billing/payment";
 import { newLineItem } from "@/lib/billing/defaults";
@@ -15,11 +16,25 @@ import { SERVICE_PRESETS } from "@/lib/billing/presets";
 import { useBilling } from "@/lib/billing/store";
 import type { BusinessDocument, DocumentKind, DocumentStatus, LineItem, TemplateId } from "@/lib/billing/types";
 import { RecipientPicker } from "@/components/crm/recipient-picker";
+import { persistRecipientFromDocument } from "@/lib/crm/from-document";
 import { findDirectoryCustomer } from "@/lib/crm/directory";
 import { useDirectory } from "@/lib/crm/use-directory";
 import type { DirectoryCustomer } from "@/lib/crm/types";
 import { mailboxPayload } from "@/lib/email/mailbox-client";
 import { htmlFromText } from "@/lib/email/html";
+
+function bindRecipient(doc: BusinessDocument): BusinessDocument {
+  const saved = persistRecipientFromDocument(doc);
+  if (!saved) return doc;
+  return {
+    ...doc,
+    customerId: saved.id,
+    customerName: saved.companyName || doc.customerName,
+    customerContact: saved.contactName || doc.customerContact,
+    customerEmail: saved.email || doc.customerEmail,
+    customerAddress: saved.address || doc.customerAddress,
+  };
+}
 
 function applyDirectoryCustomer(doc: BusinessDocument, customer: DirectoryCustomer | null): BusinessDocument {
   if (!customer) {
@@ -85,7 +100,7 @@ function DocumentEditorForm({
 }) {
   const id = persistedId;
   const router = useRouter();
-  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, convertQuoteToContract, duplicateDocument } =
+  const { company, commitDocument, archiveDocument, convertQuoteToInvoice, convertQuoteToContract, duplicateDocument, addReminder, reminders } =
     useBilling();
   const [working, setWorking] = useState(initial);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -108,7 +123,7 @@ function DocumentEditorForm({
   }
 
   function save() {
-    const saved = commitDocument(working);
+    const saved = commitDocument(bindRecipient(working));
     setWorking(saved);
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1400);
@@ -118,59 +133,26 @@ function DocumentEditorForm({
   }
 
   function printDoc() {
-    commitDocument(working);
+    commitDocument(bindRecipient(working));
     window.print();
   }
 
-  function mailCopy(doc = working) {
-    const origin = window.location.origin;
-    const snapshot = paymentSnapshotFor(doc, company);
-    const pay = kind === "invoice" ? paymentUrl(origin, snapshot) : "";
-    const subjectKey =
-      kind === "quote"
-        ? company.quoteEmailSubject
-        : kind === "invoice"
-          ? company.invoiceEmailSubject
-          : company.contractEmailSubject;
-    const subject = interpolateTemplate(subjectKey, {
-      number: working.number || "Entwurf",
-      company: working.customerName || company.legalName,
-    });
-    const noun = kind === "quote" ? "unser Angebot" : kind === "invoice" ? "unsere Rechnung" : "unseren Vertrag";
-    const greeting = working.customerContact ? `Guten Tag ${working.customerContact},` : "Guten Tag,";
-    const body = [
-      greeting,
-      "",
-      `anbei ${noun} ${working.number || ""}.`.trim(),
-      `Gesamtbetrag: ${formatMoney(totals.gross, working.currency)}.`,
-      pay ? `Zahlungslink: ${pay}` : "",
-      "",
-      company.footer,
-      "",
-      company.legalName,
-      company.ownerName,
-    ]
-      .filter((line) => line !== "")
-      .join("\n");
-    return { subject, body, pay };
-  }
-
   async function copyMail() {
-    const { subject, body } = mailCopy();
+    const { subject, body } = documentCorrespondence(working, company, window.location.origin);
     await navigator.clipboard.writeText(`${subject}\n\n${body}`);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   }
 
-  async function sendMail() {
+  async function sendMail(variant: "send" | "reminder" = "send") {
     if (!working.customerEmail) {
-      setMailFlash("Kunde ohne E-Mail");
+      setMailFlash("Empfänger ohne E-Mail");
       window.setTimeout(() => setMailFlash(""), 1600);
       return;
     }
-    const saved = commitDocument(working);
+    const saved = commitDocument(bindRecipient(working));
     setWorking(saved);
-    const { subject, body } = mailCopy(saved);
+    const { subject, body } = documentCorrespondence(saved, company, window.location.origin, variant);
     const response = await fetch("/api/mail", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -185,8 +167,24 @@ function DocumentEditorForm({
       ),
     });
     const payload = (await response.json()) as { success?: boolean; error?: { message?: string } };
-    setMailFlash(payload.success ? "Gesendet" : payload.error?.message || "Fehler");
-    window.setTimeout(() => setMailFlash(""), 2200);
+    if (payload.success) {
+      if (variant === "send" && saved.status === "draft") {
+        const sent = commitDocument({ ...saved, status: "sent" });
+        setWorking(sent);
+      }
+      if (variant === "send" && saved.kind === "invoice" && !reminders.some((item) => item.relatedId === saved.id)) {
+        addReminder({
+          title: `Zahlung ${saved.number} nachfassen`,
+          note: saved.customerName,
+          dueDate: saved.dueDate,
+          source: "invoice",
+          relatedId: saved.id,
+          customerName: saved.customerName,
+        });
+      }
+    }
+    setMailFlash(payload.success ? (variant === "reminder" ? "Erinnerung gesendet" : "Gesendet") : payload.error?.message || "Fehler");
+    window.setTimeout(() => setMailFlash(""), 2400);
   }
 
   async function copyPaymentLink() {
@@ -256,6 +254,11 @@ function DocumentEditorForm({
               <button type="button" className="btn-ghost" onClick={() => void copyPaymentLink()}>
                 <Link2 size={14} />
                 Zahlungslink
+              </button>
+            ) : null}
+            {kind === "invoice" && (working.status === "sent" || working.status === "overdue") ? (
+              <button type="button" className="btn-ghost" onClick={() => void sendMail("reminder")}>
+                Zahlung erinnern
               </button>
             ) : null}
             <button type="button" className="btn-ghost" onClick={() => void copyMail()}>
