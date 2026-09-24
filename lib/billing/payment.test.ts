@@ -59,7 +59,7 @@ test("paypal href carries amount and invoice number", () => {
 
 test("billing json fallback finds invoices by token", () => {
   const raw = JSON.stringify({
-    version: 1,
+    version: 2,
     company: { ...DEFAULT_COMPANY, iban: "DE00" },
     documents: [doc],
     reminders: [],

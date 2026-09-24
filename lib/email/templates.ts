@@ -24,7 +24,7 @@ ein kurzes Update zu Ihrer Website {domain}: alles läuft, Anfragen kommen zentr
 Wenn Sie etwas anpassen möchten (Texte, Termine, Angebote), antworten Sie einfach auf diese E-Mail.
 
 Viele Grüße
-Festag`,
+Stefan Dirnberger`,
   },
   {
     id: "wartung",
@@ -37,7 +37,7 @@ wir spielen in Kürze eine kleine Aktualisierung auf {domain} aus. Die Website b
 Sie müssen nichts tun. Bei Fragen einfach antworten.
 
 Viele Grüße
-Festag`,
+Stefan Dirnberger`,
   },
   {
     id: "angebot",
@@ -50,7 +50,7 @@ wir haben ein Angebot für {company} vorbereitet. Details und der nächste Schri
 Wenn Sie Anpassungen brauchen, schreiben Sie uns direkt an diese Adresse ({email} liegt bei uns als Kontakt).
 
 Viele Grüße
-Festag`,
+Stefan Dirnberger`,
   },
   {
     id: "zahlung",
@@ -63,7 +63,7 @@ falls eine Rechnung für {company} noch offen ist, finden Sie den Betrag und den
 Vielen Dank.
 
 Viele Grüße
-Festag`,
+Stefan Dirnberger`,
   },
   {
     id: "blank",

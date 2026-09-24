@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { DocumentList } from "@/components/billing/document-list";
+import { LocalCustomerFallback } from "@/components/crm/local-customer-fallback";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import {
   loadAutomationsForCustomer,
@@ -34,7 +34,9 @@ export default async function ClientDetailPage({
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
   const customer = await loadCustomer(id);
-  if (!customer) notFound();
+  if (!customer) {
+    return <LocalCustomerFallback id={id} />;
+  }
 
   const [websites, leads, emails, automations] = await Promise.all([
     loadWebsitesForCustomer(id),

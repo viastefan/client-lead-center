@@ -87,7 +87,7 @@ function readState(): BillingState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return hydrate(fallback);
     const parsed = JSON.parse(raw) as BillingState;
-    if (parsed.version !== 1 || !parsed.company || !Array.isArray(parsed.documents)) {
+    if (parsed.version !== 2 || !parsed.company || !Array.isArray(parsed.documents)) {
       return hydrate(fallback);
     }
     return hydrate({

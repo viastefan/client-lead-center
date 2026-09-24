@@ -6,38 +6,32 @@ import { useRouter } from "next/navigation";
 import { Copy, Link2, Plus, Printer, Send, Trash2 } from "lucide-react";
 import { DocumentPreview } from "@/components/billing/document-preview";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui";
-import { documentTotals } from "@/lib/billing/calc";
+import { documentTotals, lineNet } from "@/lib/billing/calc";
 import { formatMoney, interpolateTemplate } from "@/lib/billing/format";
-import {
-  CONTRACT_STATUSES,
-  INVOICE_STATUSES,
-  QUOTE_STATUSES,
-  TEMPLATE_META,
-  dateFieldLabel,
-  kindHref,
-  kindLabel,
-  statusLabel,
-} from "@/lib/billing/labels";
+import { CONTRACT_STATUSES, INVOICE_STATUSES, QUOTE_STATUSES, TEMPLATE_META, dateFieldLabel, kindHref, kindLabel, newKindTitle, statusLabel } from "@/lib/billing/labels";
 import { paymentSnapshotFor, paymentUrl } from "@/lib/billing/payment";
 import { newLineItem } from "@/lib/billing/defaults";
+import { SERVICE_PRESETS } from "@/lib/billing/presets";
 import { useBilling } from "@/lib/billing/store";
 import type { BusinessDocument, DocumentKind, DocumentStatus, LineItem, TemplateId } from "@/lib/billing/types";
-import { demoCustomers } from "@/lib/demo/workspace";
+import { RecipientPicker } from "@/components/crm/recipient-picker";
+import { findDirectoryCustomer } from "@/lib/crm/directory";
+import { useDirectory } from "@/lib/crm/use-directory";
+import type { DirectoryCustomer } from "@/lib/crm/types";
 import { mailboxPayload } from "@/lib/email/mailbox-client";
 import { htmlFromText } from "@/lib/email/html";
 
-function applyCustomer(doc: BusinessDocument, customerId: string): BusinessDocument {
-  const customer = demoCustomers().find((item) => item.id === customerId);
+function applyDirectoryCustomer(doc: BusinessDocument, customer: DirectoryCustomer | null): BusinessDocument {
   if (!customer) {
-    return { ...doc, customerId: "", customerName: "", customerContact: "", customerEmail: "" };
+    return { ...doc, customerId: "", customerName: "", customerContact: "", customerEmail: "", customerAddress: "" };
   }
   return {
     ...doc,
     customerId: customer.id,
-    customerName: customer.company_name,
-    customerContact: customer.contact_name,
-    customerEmail: customer.contact_email,
-    customerAddress: customer.notes?.replace("Live auf Vercel · ", "") ?? "",
+    customerName: customer.companyName,
+    customerContact: customer.contactName,
+    customerEmail: customer.email,
+    customerAddress: customer.address || customer.domain,
   };
 }
 
@@ -51,6 +45,7 @@ export function DocumentEditor({
   presetCustomerId?: string;
 }) {
   const { ready, documents, blankDocument } = useBilling();
+  const customers = useDirectory();
 
   if (!ready) {
     return <div className="glass h-72 animate-pulse rounded-lg" />;
@@ -74,10 +69,9 @@ export function DocumentEditor({
     return <DocumentEditorForm key={id} kind={kind} persistedId={id} initial={existing} />;
   }
 
-  const initial = presetCustomerId
-    ? applyCustomer(blankDocument(kind), presetCustomerId)
-    : blankDocument(kind);
-  return <DocumentEditorForm key="new" kind={kind} initial={initial} />;
+  const preset = presetCustomerId ? findDirectoryCustomer(customers, presetCustomerId) : undefined;
+  const initial = preset ? applyDirectoryCustomer(blankDocument(kind), preset) : blankDocument(kind);
+  return <DocumentEditorForm key={`new-${preset?.id ?? "none"}`} kind={kind} initial={initial} />;
 }
 
 function DocumentEditorForm({
@@ -97,11 +91,10 @@ function DocumentEditorForm({
   const [savedFlash, setSavedFlash] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mailFlash, setMailFlash] = useState("");
-  const customers = demoCustomers();
   const totals = documentTotals(working);
   const statuses = kind === "quote" ? QUOTE_STATUSES : kind === "invoice" ? INVOICE_STATUSES : CONTRACT_STATUSES;
   const title = useMemo(() => {
-    return working.number ? `${kindLabel(kind)} ${working.number}` : `Neues ${kindLabel(kind)}`;
+    return working.number ? `${kindLabel(kind)} ${working.number}` : newKindTitle(kind);
   }, [kind, working.number]);
 
   function patch(partial: Partial<BusinessDocument>) {
@@ -186,7 +179,8 @@ function DocumentEditorForm({
           to: saved.customerEmail,
           subject,
           text: body,
-          html: htmlFromText(body, saved.customerName || "Dokument"),
+          html: htmlFromText(body, company.legalName),
+          fromName: company.legalName,
         }),
       ),
     });
@@ -292,21 +286,10 @@ function DocumentEditorForm({
           }}
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-xs text-subtle">Kunde</span>
-              <select
-                className="field"
-                value={working.customerId}
-                onChange={(event) => setWorking(applyCustomer(working, event.target.value))}
-              >
-                <option value="">Kunde wählen</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.company_name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <RecipientPicker
+              value={working.customerId}
+              onChange={(customer) => setWorking(applyDirectoryCustomer(working, customer))}
+            />
             <label className="block">
               <span className="mb-1.5 block text-xs text-subtle">Status</span>
               <select
@@ -320,6 +303,36 @@ function DocumentEditorForm({
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">Empfänger-Name</span>
+              <input
+                className="field"
+                value={working.customerName}
+                onChange={(event) => patch({ customerName: event.target.value })}
+                placeholder="Firma"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">Ansprechpartner</span>
+              <input
+                className="field"
+                value={working.customerContact}
+                onChange={(event) => patch({ customerContact: event.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">E-Mail Empfänger</span>
+              <input
+                className="field"
+                type="email"
+                value={working.customerEmail}
+                onChange={(event) => patch({ customerEmail: event.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-subtle">Nummer</span>
+              <input className="field" value={working.number || "Wird beim Speichern vergeben"} readOnly />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs text-subtle">Datum</span>
@@ -394,6 +407,25 @@ function DocumentEditorForm({
                 Position
               </button>
             </div>
+            <div className="flex flex-wrap gap-1.5">
+              {SERVICE_PRESETS.map((preset) => (
+                <button
+                  key={preset.title}
+                  type="button"
+                  className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted hover:text-foreground"
+                  onClick={() =>
+                    patch({
+                      items: [
+                        ...working.items.filter((item) => item.title || item.unitPrice),
+                        { ...preset, id: crypto.randomUUID() },
+                      ],
+                    })
+                  }
+                >
+                  + {preset.title}
+                </button>
+              ))}
+            </div>
             {working.items.map((item) => (
               <div key={item.id} className="rounded-md border border-border bg-white/[0.04] p-3">
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
@@ -422,7 +454,7 @@ function DocumentEditorForm({
                   value={item.description}
                   onChange={(event) => patchItem(item.id, { description: event.target.value })}
                 />
-                <div className="mt-2 grid grid-cols-3 gap-2">
+                <div className="mt-2 grid grid-cols-4 gap-2">
                   <label className="block">
                     <span className="mb-1 block text-[11px] text-subtle">Menge</span>
                     <input
@@ -454,6 +486,10 @@ function DocumentEditorForm({
                       onChange={(event) => patchItem(item.id, { unitPrice: Number(event.target.value) })}
                     />
                   </label>
+                  <div className="flex flex-col justify-end">
+                    <span className="mb-1 block text-[11px] text-subtle">Netto</span>
+                    <p className="h-10 leading-10 text-[13px] tabular-nums">{formatMoney(lineNet(item), working.currency)}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -471,9 +507,19 @@ function DocumentEditorForm({
                 onChange={(event) => patch({ taxRate: Number(event.target.value) })}
               />
             </label>
-            <div className="flex items-end justify-between rounded-md border border-border px-4 py-3">
-              <span className="text-xs text-subtle">Gesamt</span>
-              <strong className="text-lg tabular-nums">{formatMoney(totals.gross, working.currency)}</strong>
+            <div className="space-y-1 rounded-md border border-border px-4 py-3 text-[13px]">
+              <div className="flex justify-between text-muted">
+                <span>Netto</span>
+                <span className="tabular-nums">{formatMoney(totals.net, working.currency)}</span>
+              </div>
+              <div className="flex justify-between text-muted">
+                <span>MwSt.</span>
+                <span className="tabular-nums">{formatMoney(totals.tax, working.currency)}</span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span>Gesamt</span>
+                <span className="tabular-nums">{formatMoney(totals.gross, working.currency)}</span>
+              </div>
             </div>
           </div>
 

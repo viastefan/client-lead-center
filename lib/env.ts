@@ -60,6 +60,13 @@ export function hasIonosSmtp(): boolean {
   return Boolean(read("IONOS_SMTP_USER") && read("IONOS_SMTP_PASSWORD"));
 }
 
+export function getIonosApiKey(): string | undefined {
+  const prefix = read("IONOS_API_PREFIX");
+  const secret = read("IONOS_API_SECRET");
+  if (prefix && secret) return `${prefix}.${secret}`;
+  return read("IONOS_API_KEY");
+}
+
 export function getIonosSmtp():
   | { host: string; port: number; username: string; password: string; fromName?: string }
   | undefined {
@@ -71,7 +78,7 @@ export function getIonosSmtp():
     port: Number(read("IONOS_SMTP_PORT") ?? "465") || 465,
     username,
     password,
-    fromName: read("IONOS_SMTP_FROM_NAME"),
+    fromName: read("IONOS_SMTP_FROM_NAME") ?? "Stefan Dirnberger",
   };
 }
 

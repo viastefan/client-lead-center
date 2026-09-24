@@ -108,7 +108,7 @@ export type BusinessDocument = {
 };
 
 export type BillingState = {
-  version: 1;
+  version: 2;
   company: CompanyProfile;
   documents: BusinessDocument[];
   reminders: Reminder[];

@@ -9,6 +9,10 @@ function addressLines(company: CompanyProfile): string {
   return [company.street, `${company.zip} ${company.city}`.trim(), company.country].filter(Boolean).join("\n");
 }
 
+function senderLine(company: CompanyProfile): string {
+  return [company.legalName, company.street, `${company.zip} ${company.city}`.trim()].filter(Boolean).join(" · ");
+}
+
 export function DocumentPreview({
   document: doc,
   company,
@@ -22,13 +26,17 @@ export function DocumentPreview({
   const totals = documentTotals(doc);
   const kind = kindLabel(doc.kind);
   const showSkonto = doc.kind === "invoice" && company.skontoPercent > 0;
+  const brand = company.tradeName.trim();
+  const legal = company.legalName.trim();
+  const showPaymentNote = doc.kind === "invoice" && company.paymentNote && company.paymentNote !== doc.notes;
 
   return (
     <article className={`sheet sheet-${template}`} data-template={template}>
       <header className="sheet-head">
         <div>
-          <p className="sheet-brand">{company.tradeName || company.legalName}</p>
-          <p className="sheet-legal">{company.legalName}</p>
+          <p className="sheet-brand">{brand && brand !== legal ? brand : "Freiberufler"}</p>
+          <p className="sheet-legal">{legal}</p>
+          <p className="sheet-sender">{senderLine(company)}</p>
         </div>
         <div className="sheet-kind">
           <p>{kind}</p>
@@ -63,6 +71,12 @@ export function DocumentPreview({
             <div>
               <span>Steuernr.</span>
               <strong>{company.taxNumber}</strong>
+            </div>
+          ) : null}
+          {doc.kind === "invoice" ? (
+            <div>
+              <span>Leistungsdatum</span>
+              <strong>{formatLongDate(doc.issueDate)}</strong>
             </div>
           ) : null}
         </div>
@@ -120,15 +134,13 @@ export function DocumentPreview({
       </section>
 
       {doc.notes ? <p className="sheet-notes">{doc.notes}</p> : null}
-      {doc.kind === "invoice" && company.paymentNote ? <p className="sheet-notes">{company.paymentNote}</p> : null}
+      {showPaymentNote ? <p className="sheet-notes">{company.paymentNote}</p> : null}
 
       <footer className="sheet-foot">
         <div>
           <p className="whitespace-pre-wrap">{addressLines(company)}</p>
-          {company.ownerName ? <p>{company.ownerName}</p> : null}
           {company.email ? <p>{company.email}</p> : null}
           {company.phone ? <p>{company.phone}</p> : null}
-          {company.website ? <p>{company.website.replace(/^https?:\/\//, "")}</p> : null}
         </div>
         <div>
           {company.iban ? <p>IBAN {company.iban}</p> : null}

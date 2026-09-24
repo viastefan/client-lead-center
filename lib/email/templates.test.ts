@@ -59,3 +59,9 @@ test("html mail escapes tags", () => {
   assert.equal(escapeHtml("<x>"), "&lt;x&gt;");
   assert.match(htmlFromText("A\n\nB<script>"), /&lt;script&gt;/);
 });
+
+test("broadcast templates are signed by Stefan Dirnberger", () => {
+  const status = templateById("status").text;
+  assert.match(status, /Stefan Dirnberger/);
+  assert.doesNotMatch(status, /Festag/);
+});

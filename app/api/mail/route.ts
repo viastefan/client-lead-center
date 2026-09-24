@@ -5,10 +5,12 @@ import { assertSameOrigin, enforceMemoryRateLimit } from "@/lib/api/origin";
 import { requireApiAdmin } from "@/lib/api/require-user";
 import { readJsonBody } from "@/lib/api/website-auth";
 import { resolveSmtpAccount, sendSmtpMail, verifySmtp } from "@/lib/email/ionos";
+import { smtpUserMessage } from "@/lib/email/smtp-errors";
 import { logger } from "@/lib/logger";
 import { mailSendSchema, mailTestSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 function clientKey(request: NextRequest) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "local";
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       requestId,
       message: error instanceof Error ? error.message : "unknown",
     });
-    return jsonError(new ApiError(500, "INTERNAL_ERROR", "E-Mail konnte nicht gesendet werden."), requestId);
+    return jsonError(new ApiError(500, "INTERNAL_ERROR", smtpUserMessage(error)), requestId);
   }
 }
 
@@ -80,6 +82,6 @@ export async function PUT(request: NextRequest) {
       requestId,
       message: error instanceof Error ? error.message : "unknown",
     });
-    return jsonError(new ApiError(500, "INTERNAL_ERROR", "SMTP-Verbindung fehlgeschlagen."), requestId);
+    return jsonError(new ApiError(500, "INTERNAL_ERROR", smtpUserMessage(error)), requestId);
   }
 }

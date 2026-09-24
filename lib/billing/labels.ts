@@ -6,6 +6,12 @@ export function kindLabel(kind: DocumentKind): string {
   return "Vertrag";
 }
 
+export function newKindTitle(kind: DocumentKind): string {
+  if (kind === "quote") return "Neues Angebot";
+  if (kind === "invoice") return "Neue Rechnung";
+  return "Neuer Vertrag";
+}
+
 export function kindHref(kind: DocumentKind): "/quotes" | "/invoices" | "/contracts" {
   if (kind === "quote") return "/quotes";
   if (kind === "invoice") return "/invoices";

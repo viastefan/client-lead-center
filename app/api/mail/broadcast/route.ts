@@ -6,6 +6,7 @@ import { requireApiAdmin } from "@/lib/api/require-user";
 import { readJsonBody } from "@/lib/api/website-auth";
 import { htmlFromText } from "@/lib/email/html";
 import { resolveSmtpAccount, sendSmtpMail, verifySmtp } from "@/lib/email/ionos";
+import { smtpUserMessage } from "@/lib/email/smtp-errors";
 import { renderMailPlaceholders } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { mailBroadcastSchema } from "@/lib/validations";
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         failed.push({
           email: item.email,
-          message: error instanceof Error ? error.message : "send failed",
+          message: smtpUserMessage(error),
         });
       }
       await pause(80);
@@ -109,6 +110,6 @@ export async function POST(request: NextRequest) {
       requestId,
       message: error instanceof Error ? error.message : "unknown",
     });
-    return jsonError(new ApiError(500, "INTERNAL_ERROR", "Rundmail fehlgeschlagen."), requestId);
+    return jsonError(new ApiError(500, "INTERNAL_ERROR", smtpUserMessage(error)), requestId);
   }
 }

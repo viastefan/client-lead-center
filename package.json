@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/catalog/vercel-sites.test.ts lib/integrations/snippets.test.ts lib/demo/workspace.test.ts lib/billing/calc.test.ts lib/billing/format.test.ts lib/billing/payment.test.ts lib/ops/reminders.test.ts lib/ops/inbox.test.ts lib/ops/monitor.test.ts lib/ops/events.test.ts lib/email/templates.test.ts",
+    "test": "tsx --test lib/catalog/vercel-sites.test.ts lib/integrations/snippets.test.ts lib/demo/workspace.test.ts lib/billing/calc.test.ts lib/billing/format.test.ts lib/billing/payment.test.ts lib/billing/defaults.test.ts lib/ops/reminders.test.ts lib/ops/inbox.test.ts lib/ops/monitor.test.ts lib/ops/events.test.ts lib/email/templates.test.ts lib/email/smtp-errors.test.ts lib/crm/directory.test.ts",
     "apply-site-patches": "node scripts/apply-site-patches.mjs"
   },
   "dependencies": {

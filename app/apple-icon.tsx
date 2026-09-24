@@ -1,17 +1,17 @@
 import { ImageResponse } from "next/og";
 import { brandDots } from "@/lib/brand/mark";
 
-export const size = { width: 32, height: 32 };
+export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-export default function Icon() {
-  const dots = brandDots(32);
+export default function AppleIcon() {
+  const dots = brandDots(180);
   return new ImageResponse(
     (
       <div
         style={{
-          width: 32,
-          height: 32,
+          width: 180,
+          height: 180,
           display: "flex",
           background: "transparent",
           position: "relative",
